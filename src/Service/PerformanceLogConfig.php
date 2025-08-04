@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace SimpleAsFuck\LaravelPerformanceLog\Service;
+namespace SimpleAsFuck\PerformanceLog\Service;
 
 use Illuminate\Contracts\Config\Repository;
-use SimpleAsFuck\LaravelPerformanceLog\Model\TemporaryThreshold;
+use SimpleAsFuck\PerformanceLog\Data\TemporaryThreshold;
 use SimpleAsFuck\Validator\Factory\Validator;
 use SimpleAsFuck\Validator\Rule\General\Rules;
 
@@ -40,7 +40,7 @@ class PerformanceLogConfig
     public function getSlowSqlQueryThreshold(): ?float
     {
         return self::getTemporaryThreshold($this->temporarySqlQueryThreshold)
-            ?->getValue()
+            ?->value()
             ??
             $this->getConfigValue('performance_log.database.slow_query_threshold')->float()->min(0)->nullable()
         ;
@@ -52,7 +52,7 @@ class PerformanceLogConfig
     public function getSlowDbTransactionThreshold(): ?float
     {
         return self::getTemporaryThreshold($this->temporaryDbTransactionThreshold)
-            ?->getValue()
+            ?->value()
             ??
             $this->getConfigValue('performance_log.database.slow_transaction_threshold')->float()->min(0)->nullable()
         ;
@@ -64,7 +64,7 @@ class PerformanceLogConfig
     public function getSlowRequestThreshold(): ?float
     {
         if ($this->temporaryRequestThreshold !== null) {
-            return $this->temporaryRequestThreshold->getValue();
+            return $this->temporaryRequestThreshold->value();
         }
 
         return $this->getConfigValue('performance_log.http.slow_request_threshold')->float()->min(0)->nullable();
@@ -76,7 +76,7 @@ class PerformanceLogConfig
     public function getSlowCommandThreshold(): ?float
     {
         if ($this->temporaryCommandThreshold !== null) {
-            return $this->temporaryCommandThreshold->getValue();
+            return $this->temporaryCommandThreshold->value();
         }
 
         return $this->getConfigValue('performance_log.console.slow_command_threshold')->float()->min(0)->nullable();
@@ -88,7 +88,7 @@ class PerformanceLogConfig
     public function getSlowJobThreshold(): ?float
     {
         if ($this->temporaryJobThreshold !== null) {
-            return $this->temporaryJobThreshold->getValue();
+            return $this->temporaryJobThreshold->value();
         }
 
         return $this->getConfigValue('performance_log.queue.slow_job_threshold')->float()->min(0)->nullable();
@@ -110,21 +110,13 @@ class PerformanceLogConfig
     }
 
     /**
-     * @deprecated will be removed
-     */
-    public function isSlowRequestThresholdTemporary(): bool
-    {
-        return $this->temporaryRequestThreshold !== null;
-    }
-
-    /**
      * @param float|null $threshold threshold value in milliseconds
      */
     public function setSlowSqlQueryThreshold(?float $threshold): TemporaryThreshold
     {
         $temporaryThreshold = self::getTemporaryThreshold($this->temporarySqlQueryThreshold);
         if ($temporaryThreshold !== null) {
-            return new TemporaryThreshold($threshold, $temporaryThreshold->getValue());
+            return new TemporaryThreshold($threshold, $temporaryThreshold->value());
         }
 
         $temporaryThreshold = new TemporaryThreshold($threshold, $this->getSlowSqlQueryThreshold());
@@ -140,7 +132,7 @@ class PerformanceLogConfig
     {
         $temporaryThreshold = self::getTemporaryThreshold($this->temporaryDbTransactionThreshold);
         if ($temporaryThreshold !== null) {
-            return new TemporaryThreshold($threshold, $temporaryThreshold->getValue());
+            return new TemporaryThreshold($threshold, $temporaryThreshold->value());
         }
 
         $temporaryThreshold = new TemporaryThreshold($threshold, $this->getSlowDbTransactionThreshold());

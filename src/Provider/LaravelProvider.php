@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SimpleAsFuck\LaravelPerformanceLog\Provider;
+namespace SimpleAsFuck\PerformanceLog\Provider;
 
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Console\Events\CommandStarting;
@@ -19,9 +19,9 @@ use SimpleAsFuck\LaravelPerformanceLog\Listener\DatabaseListener;
 use SimpleAsFuck\LaravelPerformanceLog\Listener\QueueListener;
 use SimpleAsFuck\LaravelPerformanceLog\Service\PerformanceLogConfig;
 
-class PackageProvider extends ServiceProvider
+class LaravelProvider extends ServiceProvider
 {
-    public function register()
+    public function register(): void
     {
         $this->app->singleton(PerformanceLogConfig::class);
         $this->app->singleton(DatabaseListener::class);
@@ -31,9 +31,9 @@ class PackageProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../../config/performance_log.php', 'performance_log');
+        $this->mergeConfigFrom(__DIR__.'/../../config/laravel.php', 'performance_log');
         $this->publishes([
-            __DIR__.'/../../config/performance_log.php' => $this->app->configPath('performance_log.php'),
+            __DIR__.'/../../config/laravel.php' => $this->app->configPath('performance_log.php'),
         ], 'performance-log-config');
 
         $this->app->make('events');

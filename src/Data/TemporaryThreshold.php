@@ -2,23 +2,20 @@
 
 declare(strict_types=1);
 
-namespace SimpleAsFuck\LaravelPerformanceLog\Model;
+namespace SimpleAsFuck\PerformanceLog\Data;
 
 final class TemporaryThreshold
 {
-    private ?float $value;
-    private ?float $original;
-
-    public function __construct(?float $value, ?float $original)
-    {
-        $this->value = $value;
-        $this->original = $original;
+    public function __construct(
+        private ?float $value,
+        private readonly ?float $original,
+    ) {
     }
 
     /**
      * @return float|null threshold value in milliseconds
      */
-    public function getValue(): ?float
+    public function value(): ?float
     {
         return $this->value;
     }
