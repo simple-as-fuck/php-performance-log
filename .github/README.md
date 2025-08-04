@@ -1,11 +1,11 @@
-# Simple as fuck / Laravel performance log
+# Simple as fuck / Php performance log
 
-Laravel service for logging slow parts of application. 
+Services for logging slow parts of application.
 
 ## Installation
 
 ```console
-composer require simple-as-fuck/laravel-performance-log
+composer require simple-as-fuck/php-performance-log
 ```
 
 ## Configuration
@@ -101,6 +101,6 @@ $config->setSlowJobThreshold(10000); // 10 seconds
 
 Is recommended send performance warning logs into your monitoring system, so you know what is slow.
 
-For simple monitoring is [laravel sentry](https://docs.sentry.io/platforms/php/guides/laravel/) integration.
+For simple monitoring is [sentry](https://docs.sentry.io/platforms/php/) integration.
 Sentry integration can collect information about request or command with stacktrace,
 this can make finding slow query much easier.
