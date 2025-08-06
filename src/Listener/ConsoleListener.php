@@ -2,34 +2,32 @@
 
 declare(strict_types=1);
 
-namespace SimpleAsFuck\LaravelPerformanceLog\Listener;
+namespace SimpleAsFuck\PerformanceLog\Listener;
 
-use Illuminate\Console\Events\CommandFinished;
-use Illuminate\Console\Events\CommandStarting;
-use Illuminate\Log\LogManager;
+use Psr\Log\LoggerInterface;
 use SimpleAsFuck\LaravelPerformanceLog\Model\Measurement;
-use SimpleAsFuck\LaravelPerformanceLog\Service\PerformanceLogConfig;
+use SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig;
 use SimpleAsFuck\LaravelPerformanceLog\Service\Stopwatch;
 
 class ConsoleListener
 {
-    private Measurement $measurement;
+    private readonly Measurement $measurement;
 
     public function __construct(
-        private PerformanceLogConfig $performanceLogConfig,
-        private LogManager $logManager,
-        private Stopwatch $stopwatch
+        private readonly PerformanceLogConfig $performanceLogConfig,
+        private readonly LoggerInterface $logger,
+        private readonly Stopwatch $stopwatch
     ) {
         $this->measurement = new Measurement();
     }
 
-    public function onCommandStart(CommandStarting $commandStarting): void
+    public function onCommandStart(string $commandName): void
     {
         $this->performanceLogConfig->restoreSlowCommandThreshold();
-        $this->measurement->start($commandStarting->command);
+        $this->measurement->start($commandName);
     }
 
-    public function onCommandFinish(CommandFinished $commandFinished): void
+    public function onCommandFinish(string $commandName): void
     {
         $threshold = $this->performanceLogConfig->getSlowCommandThreshold();
 
@@ -38,14 +36,12 @@ class ConsoleListener
             return;
         }
 
-        $logger = $this->logManager->channel($this->performanceLogConfig->getLogChannelName());
-
         if ($threshold === 0.0 && $this->performanceLogConfig->isDebugEnabled()) {
-            $time = $this->stopwatch->checkPrefix($this->measurement, $threshold * 1000, $commandFinished->command);
-            $logger->debug('Console command time: '.($time / 1000).'s name: "'.$commandFinished->command.'" pid: '.\getmypid());
+            $time = $this->stopwatch->checkPrefix($this->measurement, $threshold * 1000, $commandName);
+            $this->logger->debug('Console command time: '.($time / 1000).'s name: "'.$commandName.'" pid: '.\getmypid());
             return;
         }
 
-        $this->stopwatch->checkPrefix($this->measurement, $threshold * 1000, $commandFinished->command, static fn (float $time) => $logger->warning('Console command is too slow time: '.($time / 1000).'s name: "'.$commandFinished->command.'" threshold: '.$threshold.'s pid: '.\getmypid()));
+        $this->stopwatch->checkPrefix($this->measurement, $threshold * 1000, $commandName, static fn (float $time) => $this->logger->warning('Console command is too slow time: '.($time / 1000).'s name: "'.$commandName.'" threshold: '.$threshold.'s pid: '.\getmypid()));
     }
 }

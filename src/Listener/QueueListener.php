@@ -2,13 +2,11 @@
 
 declare(strict_types=1);
 
-namespace SimpleAsFuck\LaravelPerformanceLog\Listener;
+namespace SimpleAsFuck\PerformanceLog\Listener;
 
-use Illuminate\Log\LogManager;
-use Illuminate\Queue\Events\JobProcessed;
-use Illuminate\Queue\Events\JobProcessing;
+use Psr\Log\LoggerInterface;
 use SimpleAsFuck\LaravelPerformanceLog\Model\Measurement;
-use SimpleAsFuck\LaravelPerformanceLog\Service\PerformanceLogConfig;
+use SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig;
 use SimpleAsFuck\LaravelPerformanceLog\Service\Stopwatch;
 
 class QueueListener
@@ -18,21 +16,19 @@ class QueueListener
     public function __construct(
         private readonly PerformanceLogConfig $performanceLogConfig,
         private readonly Stopwatch $stopwatch,
-        private readonly LogManager $logManager,
+        private readonly LoggerInterface $logger,
     ) {
         $this->measurement = new Measurement();
     }
 
-    public function onJobStart(JobProcessing $jobProcessing): void
+    public function onJobStart(?string $jobId): void
     {
         $this->performanceLogConfig->restoreSlowJobThreshold();
 
-        /** @phpstan-ignore-next-line laravel developers are imbeciles in reality getJobId for now return int|string */
-        $jobId = (string) $jobProcessing->job->getJobId();
         $this->stopwatch->start($this->measurement, $jobId);
     }
 
-    public function onJobFinish(JobProcessed $jobProcessed): void
+    public function onJobFinish(string $jobName, ?string $jobId): void
     {
         $threshold = $this->performanceLogConfig->getSlowJobThreshold();
         $this->performanceLogConfig->restoreSlowJobThreshold();
@@ -40,13 +36,9 @@ class QueueListener
             return;
         }
 
-        $logger = $this->logManager->channel($this->performanceLogConfig->getLogChannelName());
-        /** @phpstan-ignore-next-line laravel developers are imbeciles in reality getJobId for now return int|string */
-        $jobId = (string) $jobProcessed->job->getJobId();
-
         if ($threshold === 0.0 && $this->performanceLogConfig->isDebugEnabled()) {
             $time = $this->stopwatch->checkPrefix($this->measurement, $threshold, $jobId);
-            $logger->debug('Queue job time: ' . $time . 'ms job name: "' . $jobProcessed->job->resolveName() . '" pid: ' . \getmypid());
+            $this->logger->debug('Queue job time: ' . $time . 'ms job name: "' . $jobName . '" pid: ' . \getmypid());
             return;
         }
 
@@ -54,7 +46,7 @@ class QueueListener
             $this->measurement,
             $threshold,
             $jobId,
-            static fn (float $time) => $logger->warning('Queue job is too slow: ' . $time . 'ms job name: "' . $jobProcessed->job->resolveName() . '" threshold: ' . $threshold . 'ms pid: ' . \getmypid())
+            static fn (float $time) => $this->logger->warning('Queue job is too slow: ' . $time . 'ms job name: "' . $jobName . '" threshold: ' . $threshold . 'ms pid: ' . \getmypid())
         );
     }
 }
