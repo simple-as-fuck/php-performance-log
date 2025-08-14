@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace SimpleAsFuck\PerformanceLog\Listener;
 
 use Psr\Log\LoggerInterface;
-use SimpleAsFuck\PerformanceLog\Model\Measurement;
+use SimpleAsFuck\PerformanceLog\Data\Measurement;
 use SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig;
 use SimpleAsFuck\PerformanceLog\Service\Stopwatch;
 
@@ -36,7 +36,7 @@ class HttpListener
             return;
         }
 
-        $time = $this->stopwatch->check($this->measurement, $threshold);
+        $time = $this->stopwatch->finishMilliseconds($this->measurement);
         if ($threshold === 0.0 && $this->performanceLogConfig->isDebugEnabled()) {
             $this->logger->debug('Http request time: '.$time.'ms method: "'.$requestMethod.'" url: "'.$requestUrl.'" pid: '.\getmypid());
             return;

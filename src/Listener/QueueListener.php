@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace SimpleAsFuck\PerformanceLog\Listener;
 
 use Psr\Log\LoggerInterface;
-use SimpleAsFuck\LaravelPerformanceLog\Model\Measurement;
+use SimpleAsFuck\PerformanceLog\Data\Measurement;
 use SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig;
-use SimpleAsFuck\LaravelPerformanceLog\Service\Stopwatch;
+use SimpleAsFuck\PerformanceLog\Service\Stopwatch;
 
 class QueueListener
 {
@@ -36,17 +36,13 @@ class QueueListener
             return;
         }
 
+        $time = $this->stopwatch->finishMilliseconds($this->measurement, $jobId);
         if ($threshold === 0.0 && $this->performanceLogConfig->isDebugEnabled()) {
-            $time = $this->stopwatch->checkPrefix($this->measurement, $threshold, $jobId);
             $this->logger->debug('Queue job time: ' . $time . 'ms job name: "' . $jobName . '" pid: ' . \getmypid());
             return;
         }
-
-        $this->stopwatch->checkPrefix(
-            $this->measurement,
-            $threshold,
-            $jobId,
-            static fn (float $time) => $this->logger->warning('Queue job is too slow: ' . $time . 'ms job name: "' . $jobName . '" threshold: ' . $threshold . 'ms pid: ' . \getmypid())
-        );
+        if ($time >= $threshold) {
+            $this->logger->warning('Queue job is too slow: ' . $time . 'ms job name: "' . $jobName . '" threshold: ' . $threshold . 'ms pid: ' . \getmypid());
+        }
     }
 }

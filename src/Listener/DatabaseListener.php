@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace SimpleAsFuck\PerformanceLog\Listener;
 
 use Psr\Log\LoggerInterface;
-use SimpleAsFuck\LaravelPerformanceLog\Model\Measurement;
+use SimpleAsFuck\PerformanceLog\Data\Measurement;
 use SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig;
-use SimpleAsFuck\LaravelPerformanceLog\Service\Stopwatch;
+use SimpleAsFuck\PerformanceLog\Service\Stopwatch;
 
 class DatabaseListener
 {
@@ -21,6 +21,9 @@ class DatabaseListener
         $this->transactionMeasurement = new Measurement();
     }
 
+    /**
+     * @param float $time in milliseconds
+     */
     public function onSqlQuery(string $sql, float $time, ?string $connectionName): void
     {
         $queryThreshold = $this->performanceLogConfig->getSlowSqlQueryThreshold();
@@ -62,27 +65,23 @@ class DatabaseListener
             return;
         }
 
-        $transactionThreshold = $this->performanceLogConfig->getSlowDbTransactionThreshold();
-        if ($transactionThreshold === null) {
+        $threshold = $this->performanceLogConfig->getSlowDbTransactionThreshold();
+        if ($threshold === null) {
             return;
         }
 
-        if (! $this->transactionMeasurement->running($connectionName)) {
+        if ($this->transactionMeasurement->startAt($connectionName) === null) {
             $this->logger->error('Database transaction measurement not running database connection: "'.$connectionName.'" pid: '.\getmypid().', check if begin transaction is called before commit/rollback!');
             return;
         }
 
-        if ($transactionThreshold === 0.0 && $this->performanceLogConfig->isDebugEnabled()) {
-            $time = $this->stopwatch->checkPrefix($this->transactionMeasurement, $transactionThreshold, $connectionName);
+        $time = $this->stopwatch->finishMilliseconds($this->transactionMeasurement, $connectionName);
+        if ($threshold === 0.0 && $this->performanceLogConfig->isDebugEnabled()) {
             $this->logger->debug('Database transaction time: '.$time.'ms connection: "'.$connectionName.'" pid: '.\getmypid());
             return;
         }
-
-        $this->stopwatch->checkPrefix(
-            $this->transactionMeasurement,
-            $transactionThreshold,
-            $connectionName,
-            fn (float $time) => $this->logger->warning('Database transaction is too slow: '.$time.'ms threshold: '.$transactionThreshold. 'ms connection: "'.$connectionName.'" pid: '.\getmypid())
-        );
+        if ($time >= $threshold) {
+            $this->logger->warning('Database transaction is too slow: '.$time.'ms threshold: '.$threshold. 'ms connection: "'.$connectionName.'" pid: '.\getmypid());
+        }
     }
 }

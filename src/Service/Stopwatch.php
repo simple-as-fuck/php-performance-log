@@ -4,46 +4,22 @@ declare(strict_types=1);
 
 namespace SimpleAsFuck\PerformanceLog\Service;
 
-use SimpleAsFuck\PerformanceLog\Model\Measurement;
+use SimpleAsFuck\PerformanceLog\Data\Measurement;
 
 class Stopwatch
 {
-    public function startMeasurement(?string $prefix = null): Measurement
-    {
-        $measurement = new Measurement();
-        $measurement->start($prefix);
-        return $measurement;
-    }
-
     public function start(Measurement $measurement, ?string $prefix = null): void
     {
-        $measurement->start($prefix);
+        $measurement->start($prefix, \microtime(true));
     }
 
-    /**
-     * @param float $threshold threshold in milliseconds define too slow finish
-     * @param callable|null $toSlowCallback what happened after slow finish
-     * @return float measured time in milliseconds
-     */
-    public function check(Measurement $measurement, float $threshold, ?callable $toSlowCallback = null): float
+    public function finishMilliseconds(Measurement $measurement, ?string $prefix = null): float
     {
-        return $this->checkPrefix($measurement, $threshold, null, $toSlowCallback);
+        return $this->finishSeconds($measurement, $prefix) * 1000;
     }
 
-    /**
-     * @param float $threshold threshold in milliseconds define too slow finish
-     * @param callable|null $toSlowCallback what happened after slow finish
-     * @return float measured time in milliseconds
-     */
-    public function checkPrefix(Measurement $measurement, float $threshold, ?string $prefix, ?callable $toSlowCallback = null): float
+    public function finishSeconds(Measurement $measurement, ?string $prefix = null): float
     {
-        $time = $measurement->finish($prefix);
-        if ($time >= $threshold) {
-            if ($toSlowCallback !== null) {
-                $toSlowCallback($time);
-            }
-        }
-
-        return $time;
+        return \microtime(true) - $measurement->finnish($prefix);
     }
 }

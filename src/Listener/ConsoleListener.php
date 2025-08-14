@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace SimpleAsFuck\PerformanceLog\Listener;
 
 use Psr\Log\LoggerInterface;
-use SimpleAsFuck\LaravelPerformanceLog\Model\Measurement;
+use SimpleAsFuck\PerformanceLog\Data\Measurement;
 use SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig;
-use SimpleAsFuck\LaravelPerformanceLog\Service\Stopwatch;
+use SimpleAsFuck\PerformanceLog\Service\Stopwatch;
 
 class ConsoleListener
 {
@@ -24,7 +24,7 @@ class ConsoleListener
     public function onCommandStart(string $commandName): void
     {
         $this->performanceLogConfig->restoreSlowCommandThreshold();
-        $this->measurement->start($commandName);
+        $this->stopwatch->start($this->measurement, $commandName);
     }
 
     public function onCommandFinish(string $commandName): void
@@ -36,12 +36,13 @@ class ConsoleListener
             return;
         }
 
+        $time = $this->stopwatch->finishSeconds($this->measurement, $commandName);
         if ($threshold === 0.0 && $this->performanceLogConfig->isDebugEnabled()) {
-            $time = $this->stopwatch->checkPrefix($this->measurement, $threshold * 1000, $commandName);
-            $this->logger->debug('Console command time: '.($time / 1000).'s name: "'.$commandName.'" pid: '.\getmypid());
+            $this->logger->debug('Console command time: '.$time.'s name: "'.$commandName.'" pid: '.\getmypid());
             return;
         }
-
-        $this->stopwatch->checkPrefix($this->measurement, $threshold * 1000, $commandName, static fn (float $time) => $this->logger->warning('Console command is too slow time: '.($time / 1000).'s name: "'.$commandName.'" threshold: '.$threshold.'s pid: '.\getmypid()));
+        if ($time >= $threshold)  {
+            $this->logger->warning('Console command is too slow time: '.$time.'s name: "'.$commandName.'" threshold: '.$threshold.'s pid: '.\getmypid());
+        }
     }
 }
