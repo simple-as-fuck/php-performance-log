@@ -17,6 +17,7 @@ use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\ServiceProvider;
 use SimpleAsFuck\PerformanceLog\Listener\ConsoleListener;
 use SimpleAsFuck\PerformanceLog\Listener\DatabaseListener;
+use SimpleAsFuck\PerformanceLog\Listener\HttpListener;
 use SimpleAsFuck\PerformanceLog\Listener\QueueListener;
 use SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig;
 
@@ -28,6 +29,7 @@ class LaravelProvider extends ServiceProvider
         $this->app->singleton(DatabaseListener::class);
         $this->app->singleton(ConsoleListener::class);
         $this->app->singleton(QueueListener::class);
+        $this->app->singleton(HttpListener::class);
     }
 
     public function boot(): void

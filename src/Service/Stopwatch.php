@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace SimpleAsFuck\LaravelPerformanceLog\Service;
+namespace SimpleAsFuck\PerformanceLog\Service;
 
-use SimpleAsFuck\LaravelPerformanceLog\Model\Measurement;
+use SimpleAsFuck\PerformanceLog\Model\Measurement;
 
 class Stopwatch
 {

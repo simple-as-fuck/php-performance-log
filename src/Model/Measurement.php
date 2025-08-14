@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SimpleAsFuck\LaravelPerformanceLog\Model;
+namespace SimpleAsFuck\PerformanceLog\Model;
 
 final class Measurement
 {
