@@ -30,13 +30,13 @@ class ConsoleListener
     public function onCommandFinish(string $commandName): void
     {
         $threshold = $this->performanceLogConfig->getSlowCommandThreshold();
+        $time = $this->stopwatch->finishSeconds($this->measurement, $commandName);
 
         $this->performanceLogConfig->restoreSlowCommandThreshold();
+
         if ($threshold === null) {
             return;
         }
-
-        $time = $this->stopwatch->finishSeconds($this->measurement, $commandName);
         if ($threshold === 0.0) {
             $this->logger->debug('Console command time: '.$time.'s name: "'.$commandName.'" pid: '.\getmypid());
             return;

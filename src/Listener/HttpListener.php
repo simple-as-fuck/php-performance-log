@@ -30,13 +30,13 @@ class HttpListener
     public function onRequestFinish(string $requestMethod, string $requestUrl): void
     {
         $threshold = $this->performanceLogConfig->getSlowRequestThreshold();
+        $time = $this->stopwatch->finishMilliseconds($this->measurement);
+
         $this->performanceLogConfig->restoreSlowRequestThreshold();
 
         if ($threshold === null) {
             return;
         }
-
-        $time = $this->stopwatch->finishMilliseconds($this->measurement);
         if ($threshold === 0.0) {
             $this->logger->debug('Http request time: '.$time.'ms method: "'.$requestMethod.'" url: "'.$requestUrl.'" pid: '.\getmypid());
             return;

@@ -27,15 +27,14 @@ class DatabaseListener
     public function onSqlQuery(string $sql, float $time, ?string $connectionName): void
     {
         $queryThreshold = $this->performanceLogConfig->getSlowSqlQueryThreshold();
+
         if ($queryThreshold === null) {
             return;
         }
-
         if ($queryThreshold === 0.0) {
             $this->logger->debug('Database query time: '.$time.'ms sql: "'.$sql.'" connection: "'.$connectionName.'" pid: '.\getmypid());
             return;
         }
-
         if ($time >= $queryThreshold) {
             $this->logger->warning('Database query is too slow: '.$time.'ms sql: "'.$sql.'" threshold: '.$queryThreshold. 'ms connection: "'.$connectionName.'" pid: '.\getmypid());
         }
@@ -51,7 +50,6 @@ class DatabaseListener
         if ($transactionThreshold === null) {
             return;
         }
-
         if ($transactionThreshold === 0.0) {
             $this->logger->debug('Database transaction begin connection: "'.$connectionName.'" pid: '.\getmypid());
         }

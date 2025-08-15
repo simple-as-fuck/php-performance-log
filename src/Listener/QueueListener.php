@@ -31,12 +31,13 @@ class QueueListener
     public function onJobFinish(string $jobName, ?string $jobId): void
     {
         $threshold = $this->performanceLogConfig->getSlowJobThreshold();
+        $time = $this->stopwatch->finishMilliseconds($this->measurement, $jobId);
+
         $this->performanceLogConfig->restoreSlowJobThreshold();
+
         if ($threshold === null) {
             return;
         }
-
-        $time = $this->stopwatch->finishMilliseconds($this->measurement, $jobId);
         if ($threshold === 0.0) {
             $this->logger->debug('Queue job time: ' . $time . 'ms job name: "' . $jobName . '" pid: ' . \getmypid());
             return;
