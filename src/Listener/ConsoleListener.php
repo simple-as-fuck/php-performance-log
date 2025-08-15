@@ -14,8 +14,8 @@ class ConsoleListener
     private readonly Measurement $measurement;
 
     public function __construct(
-        private readonly PerformanceLogConfig $performanceLogConfig,
         private readonly LoggerInterface $logger,
+        private readonly PerformanceLogConfig $performanceLogConfig,
         private readonly Stopwatch $stopwatch
     ) {
         $this->measurement = new Measurement();
@@ -41,7 +41,7 @@ class ConsoleListener
             $this->logger->debug('Console command time: '.$time.'s name: "'.$commandName.'" pid: '.\getmypid());
             return;
         }
-        if ($time >= $threshold)  {
+        if ($time >= $threshold) {
             $this->logger->warning('Console command is too slow time: '.$time.'s name: "'.$commandName.'" threshold: '.$threshold.'s pid: '.\getmypid());
         }
     }

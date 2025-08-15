@@ -14,9 +14,9 @@ class QueueListener
     private readonly Measurement $measurement;
 
     public function __construct(
+        private readonly LoggerInterface $logger,
         private readonly PerformanceLogConfig $performanceLogConfig,
         private readonly Stopwatch $stopwatch,
-        private readonly LoggerInterface $logger,
     ) {
         $this->measurement = new Measurement();
     }

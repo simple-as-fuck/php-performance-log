@@ -15,8 +15,8 @@ class HttpListener
 
     public function __construct(
         private readonly LoggerInterface $logger,
-        private readonly Stopwatch $stopwatch,
         private readonly PerformanceLogConfig $performanceLogConfig,
+        private readonly Stopwatch $stopwatch,
     ) {
         $this->measurement = new Measurement();
     }

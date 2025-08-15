@@ -33,25 +33,25 @@ class LaravelProvider extends ServiceProvider
         $this->app->singleton(PerformanceLogConfig::class, LaravelPerformanceLogConfig::class);
         $this->app->singleton(Stopwatch::class);
 
+        $this->app->singleton(ConsoleListener::class, fn () => new ConsoleListener(
+            $this->makePerformanceLogger(),
+            $this->makePerformanceLogConfig(),
+            $this->makeStopwatch(),
+        ));
         $this->app->singleton(DatabaseListener::class, fn () => new DatabaseListener(
             $this->makePerformanceLogger(),
-            $this->app->make(Stopwatch::class),
-            $this->app->make(PerformanceLogConfig::class),
-        ));
-        $this->app->singleton(ConsoleListener::class, fn () => new ConsoleListener(
-            $this->app->make(PerformanceLogConfig::class),
-            $this->makePerformanceLogger(),
-            $this->app->make(Stopwatch::class),
-        ));
-        $this->app->singleton(QueueListener::class, fn () => new QueueListener(
-            $this->app->make(PerformanceLogConfig::class),
-            $this->app->make(Stopwatch::class),
-            $this->makePerformanceLogger(),
+            $this->makePerformanceLogConfig(),
+            $this->makeStopwatch(),
         ));
         $this->app->singleton(HttpListener::class, fn () => new HttpListener(
             $this->makePerformanceLogger(),
-            $this->app->make(Stopwatch::class),
-            $this->app->make(PerformanceLogConfig::class),
+            $this->makePerformanceLogConfig(),
+            $this->makeStopwatch(),
+        ));
+        $this->app->singleton(QueueListener::class, fn () => new QueueListener(
+            $this->makePerformanceLogger(),
+            $this->makePerformanceLogConfig(),
+            $this->makeStopwatch(),
         ));
     }
 
@@ -62,23 +62,25 @@ class LaravelProvider extends ServiceProvider
         ], 'performance-log-config');
 
         $this->app->make('events');
+        /** @var Dispatcher $dispatcher */
+        $dispatcher = $this->app->make(Dispatcher::class);
+
+        /** @var ConsoleListener $consoleListener */
+        $consoleListener = $this->app->make(ConsoleListener::class);
+        $dispatcher->listen(CommandStarting::class, static fn (CommandStarting $command) => $consoleListener->onCommandStart($command->command));
+        $dispatcher->listen(CommandFinished::class, static fn (CommandFinished $command) => $consoleListener->onCommandFinish($command->command));
 
         /** @var DatabaseManager $databaseManager */
         $databaseManager = $this->app->make(DatabaseManager::class);
         $databaseDispatcher = $databaseManager->connection()->getEventDispatcher();
 
+        /** @var DatabaseListener $databaseListener */
         $databaseListener = $this->app->make(DatabaseListener::class);
+        /** @phpstan-ignore-next-line laravel developers are imbeciles in reality time for now return float|null */
         $databaseDispatcher->listen(QueryExecuted::class, static fn (QueryExecuted $query) => $databaseListener->onSqlQuery($query->sql, $query->time ?? 0.0, $query->connectionName));
         $databaseDispatcher->listen(TransactionBeginning::class, static fn (TransactionBeginning $transaction) => $databaseListener->onTransactionStart($transaction->connection->transactionLevel(), $transaction->connectionName));
         $databaseDispatcher->listen(TransactionRolledBack::class, static fn (TransactionRolledBack $transaction) => $databaseListener->onTransactionFinnish($transaction->connection->transactionLevel(), $transaction->connectionName));
         $databaseDispatcher->listen(TransactionCommitted::class, static fn (TransactionCommitted $transaction) => $databaseListener->onTransactionFinnish($transaction->connection->transactionLevel(), $transaction->connectionName));
-
-        /** @var Dispatcher $dispatcher */
-        $dispatcher = $this->app->make(Dispatcher::class);
-
-        $consoleListener = $this->app->make(ConsoleListener::class);
-        $dispatcher->listen(CommandStarting::class, static fn (CommandStarting $command) => $consoleListener->onCommandStart($command->command));
-        $dispatcher->listen(CommandFinished::class, static fn (CommandFinished $command) => $consoleListener->onCommandFinish($command->command));
 
         $queueListener = $this->app->make(QueueListener::class);
         /** @phpstan-ignore-next-line laravel developers are imbeciles in reality getJobId for now return int|string */
@@ -89,13 +91,27 @@ class LaravelProvider extends ServiceProvider
 
     private function makePerformanceLogger(): LoggerInterface
     {
+        /** @var Repository $config */
         $config = $this->app->make(Repository::class);
+        /** @var LogManager $logManager */
         $logManager = $this->app->make(LogManager::class);
 
         $performanceLogChanel = $config->get('performance_log.log_channel');
-        if ( ! is_string($performanceLogChanel)) {
+        if (! is_string($performanceLogChanel)) {
             $performanceLogChanel = null;
         }
         return $logManager->channel($performanceLogChanel);
+    }
+
+    private function makePerformanceLogConfig(): PerformanceLogConfig
+    {
+        /** @var PerformanceLogConfig */
+        return $this->app->make(PerformanceLogConfig::class);
+    }
+
+    private function makeStopwatch(): Stopwatch
+    {
+        /** @var Stopwatch */
+        return $this->app->make(Stopwatch::class);
     }
 }

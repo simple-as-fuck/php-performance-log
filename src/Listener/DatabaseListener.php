@@ -15,8 +15,8 @@ class DatabaseListener
 
     public function __construct(
         private readonly LoggerInterface $logger,
+        private readonly PerformanceLogConfig $performanceLogConfig,
         private readonly Stopwatch $stopwatch,
-        private readonly PerformanceLogConfig $performanceLogConfig
     ) {
         $this->transactionMeasurement = new Measurement();
     }
