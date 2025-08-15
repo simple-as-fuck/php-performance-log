@@ -37,7 +37,7 @@ class ConsoleListener
         }
 
         $time = $this->stopwatch->finishSeconds($this->measurement, $commandName);
-        if ($threshold === 0.0 && $this->performanceLogConfig->isDebugEnabled()) {
+        if ($threshold === 0.0) {
             $this->logger->debug('Console command time: '.$time.'s name: "'.$commandName.'" pid: '.\getmypid());
             return;
         }

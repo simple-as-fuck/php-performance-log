@@ -37,7 +37,7 @@ class HttpListener
         }
 
         $time = $this->stopwatch->finishMilliseconds($this->measurement);
-        if ($threshold === 0.0 && $this->performanceLogConfig->isDebugEnabled()) {
+        if ($threshold === 0.0) {
             $this->logger->debug('Http request time: '.$time.'ms method: "'.$requestMethod.'" url: "'.$requestUrl.'" pid: '.\getmypid());
             return;
         }

@@ -6,35 +6,57 @@ namespace SimpleAsFuck\PerformanceLog\Provider;
 
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Console\Events\CommandStarting;
+use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\Events\TransactionBeginning;
 use Illuminate\Database\Events\TransactionCommitted;
 use Illuminate\Database\Events\TransactionRolledBack;
 use Illuminate\Events\Dispatcher;
+use Illuminate\Log\LogManager;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\ServiceProvider;
+use Psr\Log\LoggerInterface;
 use SimpleAsFuck\PerformanceLog\Listener\ConsoleListener;
 use SimpleAsFuck\PerformanceLog\Listener\DatabaseListener;
 use SimpleAsFuck\PerformanceLog\Listener\HttpListener;
 use SimpleAsFuck\PerformanceLog\Listener\QueueListener;
+use SimpleAsFuck\PerformanceLog\Service\LaravelPerformanceLogConfig;
 use SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig;
+use SimpleAsFuck\PerformanceLog\Service\Stopwatch;
 
 class LaravelProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(PerformanceLogConfig::class);
-        $this->app->singleton(DatabaseListener::class);
-        $this->app->singleton(ConsoleListener::class);
-        $this->app->singleton(QueueListener::class);
-        $this->app->singleton(HttpListener::class);
+        $this->app->singleton(PerformanceLogConfig::class, LaravelPerformanceLogConfig::class);
+        $this->app->singleton(Stopwatch::class);
+
+        $this->app->singleton(DatabaseListener::class, fn () => new DatabaseListener(
+            $this->makePerformanceLogger(),
+            $this->app->make(Stopwatch::class),
+            $this->app->make(PerformanceLogConfig::class),
+        ));
+        $this->app->singleton(ConsoleListener::class, fn () => new ConsoleListener(
+            $this->app->make(PerformanceLogConfig::class),
+            $this->makePerformanceLogger(),
+            $this->app->make(Stopwatch::class),
+        ));
+        $this->app->singleton(QueueListener::class, fn () => new QueueListener(
+            $this->app->make(PerformanceLogConfig::class),
+            $this->app->make(Stopwatch::class),
+            $this->makePerformanceLogger(),
+        ));
+        $this->app->singleton(HttpListener::class, fn () => new HttpListener(
+            $this->makePerformanceLogger(),
+            $this->app->make(Stopwatch::class),
+            $this->app->make(PerformanceLogConfig::class),
+        ));
     }
 
     public function boot(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../../config/laravel.php', 'performance_log');
         $this->publishes([
             __DIR__.'/../../config/laravel.php' => $this->app->configPath('performance_log.php'),
         ], 'performance-log-config');
@@ -63,5 +85,17 @@ class LaravelProvider extends ServiceProvider
         $dispatcher->listen(JobProcessing::class, static fn (JobProcessing $job) => $queueListener->onJobStart((string) $job->job->getJobId()));
         /** @phpstan-ignore-next-line laravel developers are imbeciles in reality getJobId for now return int|string */
         $dispatcher->listen(JobProcessed::class, static fn (JobProcessed $job) => $queueListener->onJobFinish($job->job->resolveName(), (string) $job->job->getJobId()));
+    }
+
+    private function makePerformanceLogger(): LoggerInterface
+    {
+        $config = $this->app->make(Repository::class);
+        $logManager = $this->app->make(LogManager::class);
+
+        $performanceLogChanel = $config->get('performance_log.log_channel');
+        if ( ! is_string($performanceLogChanel)) {
+            $performanceLogChanel = null;
+        }
+        return $logManager->channel($performanceLogChanel);
     }
 }

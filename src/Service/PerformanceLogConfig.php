@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace SimpleAsFuck\PerformanceLog\Service;
 
-use Illuminate\Contracts\Config\Repository;
 use SimpleAsFuck\PerformanceLog\Data\TemporaryThreshold;
-use SimpleAsFuck\Validator\Factory\Validator;
-use SimpleAsFuck\Validator\Rule\General\Rules;
 
 class PerformanceLogConfig
 {
@@ -19,94 +16,17 @@ class PerformanceLogConfig
     private ?TemporaryThreshold $temporaryCommandThreshold = null;
     private ?TemporaryThreshold $temporaryJobThreshold = null;
 
-    public function __construct(
-        private readonly Repository $config,
-    ) {
-    }
-
-    public function isDebugEnabled(): bool
-    {
-        return $this->getConfigValue('app.debug')->bool()->notNull();
-    }
-
-    public function getLogChannelName(): ?string
-    {
-        return $this->getConfigValue('performance_log.log_channel')->string()->nullable();
-    }
-
     /**
      * @return float|null threshold value in milliseconds
      */
     public function getSlowSqlQueryThreshold(): ?float
     {
-        return self::getTemporaryThreshold($this->temporarySqlQueryThreshold)
-            ?->value()
-            ??
-            $this->getConfigValue('performance_log.database.slow_query_threshold')->float()->min(0)->nullable()
-        ;
-    }
-
-    /**
-     * @return float|null threshold value in milliseconds
-     */
-    public function getSlowDbTransactionThreshold(): ?float
-    {
-        return self::getTemporaryThreshold($this->temporaryDbTransactionThreshold)
-            ?->value()
-            ??
-            $this->getConfigValue('performance_log.database.slow_transaction_threshold')->float()->min(0)->nullable()
-        ;
-    }
-
-    /**
-     * @return float|null threshold value in milliseconds
-     */
-    public function getSlowRequestThreshold(): ?float
-    {
-        if ($this->temporaryRequestThreshold !== null) {
-            return $this->temporaryRequestThreshold->value();
+        $temporaryThreshold = self::getTemporaryThreshold($this->temporarySqlQueryThreshold);
+        if ($temporaryThreshold !== null) {
+            return $this->checkDebugThreshold($temporaryThreshold->value());
         }
 
-        return $this->getConfigValue('performance_log.http.slow_request_threshold')->float()->min(0)->nullable();
-    }
-
-    /**
-     * @return float|null threshold value in seconds
-     */
-    public function getSlowCommandThreshold(): ?float
-    {
-        if ($this->temporaryCommandThreshold !== null) {
-            return $this->temporaryCommandThreshold->value();
-        }
-
-        return $this->getConfigValue('performance_log.console.slow_command_threshold')->float()->min(0)->nullable();
-    }
-
-    /**
-     * @return float|null threshold value in milliseconds
-     */
-    public function getSlowJobThreshold(): ?float
-    {
-        if ($this->temporaryJobThreshold !== null) {
-            return $this->temporaryJobThreshold->value();
-        }
-
-        return $this->getConfigValue('performance_log.queue.slow_job_threshold')->float()->min(0)->nullable();
-    }
-
-    /**
-     * @param float|null $threshold threshold value in seconds
-     */
-    public function setSlowCommandThreshold(?float $threshold): void
-    {
-        if ($this->temporaryCommandThreshold === null) {
-            $this->temporaryCommandThreshold = new TemporaryThreshold($threshold, null);
-        }
-    }
-
-    public function restoreSlowCommandThreshold(): void
-    {
-        $this->temporaryCommandThreshold = null;
+        return $this->checkDebugThreshold($this->getConfigSlowSqlQueryThreshold());
     }
 
     /**
@@ -126,6 +46,19 @@ class PerformanceLogConfig
     }
 
     /**
+     * @return float|null threshold value in milliseconds
+     */
+    public function getSlowDbTransactionThreshold(): ?float
+    {
+        $temporaryThreshold = self::getTemporaryThreshold($this->temporaryDbTransactionThreshold);
+        if ($temporaryThreshold !== null) {
+            return $this->checkDebugThreshold($temporaryThreshold->value());
+        }
+
+        return $this->checkDebugThreshold($this->getConfigSlowDbTransactionThreshold());
+    }
+
+    /**
      * @param float|null $threshold threshold value in milliseconds
      */
     public function setSlowDbTransactionThreshold(?float $threshold): TemporaryThreshold
@@ -142,6 +75,18 @@ class PerformanceLogConfig
     }
 
     /**
+     * @return float|null threshold value in milliseconds
+     */
+    public function getSlowRequestThreshold(): ?float
+    {
+        if ($this->temporaryRequestThreshold !== null) {
+            return $this->checkDebugThreshold($this->temporaryRequestThreshold->value());
+        }
+
+        return $this->checkDebugThreshold($this->getConfigSlowRequestThreshold());
+    }
+
+    /**
      * @param float|null $threshold value in milliseconds
      */
     public function setSlowRequestThreshold(?float $threshold): void
@@ -149,6 +94,50 @@ class PerformanceLogConfig
         if ($this->temporaryRequestThreshold === null) {
             $this->temporaryRequestThreshold = new TemporaryThreshold($threshold, null);
         }
+    }
+
+    public function restoreSlowRequestThreshold(): void
+    {
+        $this->temporaryRequestThreshold = null;
+    }
+
+    /**
+     * @return float|null threshold value in seconds
+     */
+    public function getSlowCommandThreshold(): ?float
+    {
+        if ($this->temporaryCommandThreshold !== null) {
+            return $this->checkDebugThreshold($this->temporaryCommandThreshold->value());
+        }
+
+        return $this->checkDebugThreshold($this->getConfigSlowCommandThreshold());
+    }
+
+    /**
+     * @param float|null $threshold threshold value in seconds
+     */
+    public function setSlowCommandThreshold(?float $threshold): void
+    {
+        if ($this->temporaryCommandThreshold === null) {
+            $this->temporaryCommandThreshold = new TemporaryThreshold($threshold, null);
+        }
+    }
+
+    public function restoreSlowCommandThreshold(): void
+    {
+        $this->temporaryCommandThreshold = null;
+    }
+
+    /**
+     * @return float|null threshold value in milliseconds
+     */
+    public function getSlowJobThreshold(): ?float
+    {
+        if ($this->temporaryJobThreshold !== null) {
+            return $this->checkDebugThreshold($this->temporaryJobThreshold->value());
+        }
+
+        return $this->checkDebugThreshold($this->getConfigSlowJobThreshold());
     }
 
     /**
@@ -159,14 +148,54 @@ class PerformanceLogConfig
         $this->temporaryJobThreshold = new TemporaryThreshold($threshold, null);
     }
 
-    public function restoreSlowRequestThreshold(): void
-    {
-        $this->temporaryRequestThreshold = null;
-    }
-
     public function restoreSlowJobThreshold(): void
     {
         $this->temporaryJobThreshold = null;
+    }
+
+    protected function getConfigDebug(): bool
+    {
+        return false;
+    }
+
+    /**
+     * @return float|null threshold value in milliseconds
+     */
+    protected function getConfigSlowSqlQueryThreshold(): ?float
+    {
+        return 50;
+    }
+
+    /**
+     * @return float|null threshold value in milliseconds
+     */
+    protected function getConfigSlowDbTransactionThreshold(): ?float
+    {
+        return 300;
+    }
+
+    /**
+     * @return float|null threshold value in milliseconds
+     */
+    protected function getConfigSlowRequestThreshold(): ?float
+    {
+        return 1000;
+    }
+
+    /**
+     * @return float|null threshold value in seconds
+     */
+    protected function getConfigSlowCommandThreshold(): ?float
+    {
+        return null;
+    }
+
+    /**
+     * @return float|null threshold value in milliseconds
+     */
+    protected function getConfigSlowJobThreshold(): ?float
+    {
+        return null;
     }
 
     /**
@@ -187,11 +216,14 @@ class PerformanceLogConfig
         return $threshold;
     }
 
-    /**
-     * @param non-empty-string $key
-     */
-    private function getConfigValue(string $key): Rules
+    private function checkDebugThreshold(?float $threshold): ?float
     {
-        return Validator::make($this->config->get($key), 'Config key: '.$key);
+        if ($threshold === 0.0) {
+            if ($this->getConfigDebug() === false) {
+                return null;
+            }
+        }
+
+        return $threshold;
     }
 }

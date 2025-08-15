@@ -31,7 +31,7 @@ class DatabaseListener
             return;
         }
 
-        if ($queryThreshold === 0.0 && $this->performanceLogConfig->isDebugEnabled()) {
+        if ($queryThreshold === 0.0) {
             $this->logger->debug('Database query time: '.$time.'ms sql: "'.$sql.'" connection: "'.$connectionName.'" pid: '.\getmypid());
             return;
         }
@@ -52,7 +52,7 @@ class DatabaseListener
             return;
         }
 
-        if ($transactionThreshold === 0.0 && $this->performanceLogConfig->isDebugEnabled()) {
+        if ($transactionThreshold === 0.0) {
             $this->logger->debug('Database transaction begin connection: "'.$connectionName.'" pid: '.\getmypid());
         }
 
@@ -76,7 +76,7 @@ class DatabaseListener
         }
 
         $time = $this->stopwatch->finishMilliseconds($this->transactionMeasurement, $connectionName);
-        if ($threshold === 0.0 && $this->performanceLogConfig->isDebugEnabled()) {
+        if ($threshold === 0.0) {
             $this->logger->debug('Database transaction time: '.$time.'ms connection: "'.$connectionName.'" pid: '.\getmypid());
             return;
         }

@@ -37,7 +37,7 @@ class QueueListener
         }
 
         $time = $this->stopwatch->finishMilliseconds($this->measurement, $jobId);
-        if ($threshold === 0.0 && $this->performanceLogConfig->isDebugEnabled()) {
+        if ($threshold === 0.0) {
             $this->logger->debug('Queue job time: ' . $time . 'ms job name: "' . $jobName . '" pid: ' . \getmypid());
             return;
         }
