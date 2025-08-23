@@ -14,6 +14,7 @@ use Illuminate\Database\Events\TransactionCommitted;
 use Illuminate\Database\Events\TransactionRolledBack;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Log\LogManager;
+use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\ServiceProvider;
@@ -85,6 +86,8 @@ class LaravelProvider extends ServiceProvider
         $queueListener = $this->app->make(QueueListener::class);
         /** @phpstan-ignore-next-line laravel developers are imbeciles in reality getJobId for now return int|string */
         $dispatcher->listen(JobProcessing::class, static fn (JobProcessing $job) => $queueListener->onJobStart((string) $job->job->getJobId()));
+        /** @phpstan-ignore-next-line laravel developers are imbeciles in reality getJobId for now return int|string */
+        $dispatcher->listen(JobFailed::class, static fn (JobFailed $job) => $queueListener->onJobFinish($job->job->resolveName(), (string) $job->job->getJobId()));
         /** @phpstan-ignore-next-line laravel developers are imbeciles in reality getJobId for now return int|string */
         $dispatcher->listen(JobProcessed::class, static fn (JobProcessed $job) => $queueListener->onJobFinish($job->job->resolveName(), (string) $job->job->getJobId()));
     }
