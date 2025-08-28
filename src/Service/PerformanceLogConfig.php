@@ -6,7 +6,7 @@ namespace SimpleAsFuck\PerformanceLog\Service;
 
 use SimpleAsFuck\PerformanceLog\Data\TemporaryThreshold;
 
-class PerformanceLogConfig
+abstract class PerformanceLogConfig
 {
     /** @var \WeakReference<TemporaryThreshold>|null */
     private ?\WeakReference $temporarySqlQueryThreshold = null;
@@ -19,7 +19,7 @@ class PerformanceLogConfig
     /**
      * @return float|null threshold value in milliseconds
      */
-    public function getSlowSqlQueryThreshold(): ?float
+    final public function getSlowSqlQueryThreshold(): ?float
     {
         $temporaryThreshold = self::getTemporaryThreshold($this->temporarySqlQueryThreshold);
         if ($temporaryThreshold !== null) {
@@ -32,7 +32,7 @@ class PerformanceLogConfig
     /**
      * @param float|null $threshold threshold value in milliseconds
      */
-    public function setSlowSqlQueryThreshold(?float $threshold): TemporaryThreshold
+    final public function setSlowSqlQueryThreshold(?float $threshold): TemporaryThreshold
     {
         $temporaryThreshold = self::getTemporaryThreshold($this->temporarySqlQueryThreshold);
         if ($temporaryThreshold !== null) {
@@ -48,7 +48,7 @@ class PerformanceLogConfig
     /**
      * @return float|null threshold value in milliseconds
      */
-    public function getSlowDbTransactionThreshold(): ?float
+    final public function getSlowDbTransactionThreshold(): ?float
     {
         $temporaryThreshold = self::getTemporaryThreshold($this->temporaryDbTransactionThreshold);
         if ($temporaryThreshold !== null) {
@@ -61,7 +61,7 @@ class PerformanceLogConfig
     /**
      * @param float|null $threshold threshold value in milliseconds
      */
-    public function setSlowDbTransactionThreshold(?float $threshold): TemporaryThreshold
+    final public function setSlowDbTransactionThreshold(?float $threshold): TemporaryThreshold
     {
         $temporaryThreshold = self::getTemporaryThreshold($this->temporaryDbTransactionThreshold);
         if ($temporaryThreshold !== null) {
@@ -77,7 +77,7 @@ class PerformanceLogConfig
     /**
      * @return float|null threshold value in milliseconds
      */
-    public function getSlowRequestThreshold(): ?float
+    final public function getSlowRequestThreshold(): ?float
     {
         if ($this->temporaryRequestThreshold !== null) {
             return $this->checkDebugThreshold($this->temporaryRequestThreshold->value());
@@ -89,14 +89,14 @@ class PerformanceLogConfig
     /**
      * @param float|null $threshold value in milliseconds
      */
-    public function setSlowRequestThreshold(?float $threshold): void
+    final public function setSlowRequestThreshold(?float $threshold): void
     {
         if ($this->temporaryRequestThreshold === null) {
             $this->temporaryRequestThreshold = new TemporaryThreshold($threshold, null);
         }
     }
 
-    public function restoreSlowRequestThreshold(): void
+    final public function restoreSlowRequestThreshold(): void
     {
         $this->temporaryRequestThreshold = null;
     }
@@ -104,7 +104,7 @@ class PerformanceLogConfig
     /**
      * @return float|null threshold value in seconds
      */
-    public function getSlowCommandThreshold(): ?float
+    final public function getSlowCommandThreshold(): ?float
     {
         if ($this->temporaryCommandThreshold !== null) {
             return $this->checkDebugThreshold($this->temporaryCommandThreshold->value());
@@ -116,14 +116,14 @@ class PerformanceLogConfig
     /**
      * @param float|null $threshold threshold value in seconds
      */
-    public function setSlowCommandThreshold(?float $threshold): void
+    final public function setSlowCommandThreshold(?float $threshold): void
     {
         if ($this->temporaryCommandThreshold === null) {
             $this->temporaryCommandThreshold = new TemporaryThreshold($threshold, null);
         }
     }
 
-    public function restoreSlowCommandThreshold(): void
+    final public function restoreSlowCommandThreshold(): void
     {
         $this->temporaryCommandThreshold = null;
     }
@@ -131,7 +131,7 @@ class PerformanceLogConfig
     /**
      * @return float|null threshold value in milliseconds
      */
-    public function getSlowJobThreshold(): ?float
+    final public function getSlowJobThreshold(): ?float
     {
         if ($this->temporaryJobThreshold !== null) {
             return $this->checkDebugThreshold($this->temporaryJobThreshold->value());
@@ -143,12 +143,12 @@ class PerformanceLogConfig
     /**
      * @param float|null $threshold value in milliseconds
      */
-    public function setSlowJobThreshold(?float $threshold): void
+    final public function setSlowJobThreshold(?float $threshold): void
     {
         $this->temporaryJobThreshold = new TemporaryThreshold($threshold, null);
     }
 
-    public function restoreSlowJobThreshold(): void
+    final public function restoreSlowJobThreshold(): void
     {
         $this->temporaryJobThreshold = null;
     }
