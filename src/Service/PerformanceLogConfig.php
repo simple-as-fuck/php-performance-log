@@ -91,9 +91,7 @@ abstract class PerformanceLogConfig
      */
     final public function setSlowRequestThreshold(?float $threshold): void
     {
-        if ($this->temporaryRequestThreshold === null) {
-            $this->temporaryRequestThreshold = new TemporaryThreshold($threshold, null);
-        }
+        $this->temporaryRequestThreshold = new TemporaryThreshold($threshold, null);
     }
 
     final public function restoreSlowRequestThreshold(): void
@@ -118,9 +116,7 @@ abstract class PerformanceLogConfig
      */
     final public function setSlowCommandThreshold(?float $threshold): void
     {
-        if ($this->temporaryCommandThreshold === null) {
-            $this->temporaryCommandThreshold = new TemporaryThreshold($threshold, null);
-        }
+        $this->temporaryCommandThreshold = new TemporaryThreshold($threshold, null);
     }
 
     final public function restoreSlowCommandThreshold(): void

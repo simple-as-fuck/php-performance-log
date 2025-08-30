@@ -29,6 +29,6 @@ return [
     ],
     'queue' => [
         // define threshold for queue job
-        'slow_job_threshold' => null,
+        'slow_job_threshold' => 40000,
     ],
 ];
