@@ -8,12 +8,6 @@ Services for logging slow parts of application.
 composer require simple-as-fuck/php-performance-log
 ```
 
-## Configuration
-
-```console
-php artisan vendor:publish --tag performance-log-config
-```
-
 ## Support
 
 If any PHP platform requirements in [composer.json](../composer.json) ends with security support,
@@ -21,30 +15,61 @@ consider package version as unsupported except last version.
 
 [PHP supported versions](https://www.php.net/supported-versions.php).
 
-## Http middleware usage
+### Measurements support
 
-For http request time logging you must register `PerformanceMiddleware`.
-Look at [laravel documentation](https://laravel.com/docs/middleware) how to use laravel middlewares.
+| Application | Http requests                        | DB transactions          | SQL queries             | Console commands | Queue Jobs             |
+|-------------|--------------------------------------|--------------------------|-------------------------|------------------|------------------------|
+| Laravel     | With middleware use default 1 second | Default 300 milliseconds | Default 50 milliseconds | Default off      | Recommended 40 seconds |
 
-Recommended usage is register middleware as [global](https://laravel.com/docs/middleware#global-middleware) on **first position** and all of your request will be measured. 
 
-If you want register middleware on route group you must configure 
-[middleware priority](https://laravel.com/docs/middleware#sorting-middleware)
-and put `PerformanceMiddleware` on **first position**.
+### Laravel application
+
+Global thresholds configuration are in `performance_log.php` config, publishable from package.
+
+```console
+php artisan vendor:publish --tag performance-log-config
+```
+
+For http request time logging you must register [LaravelMiddleware](../src/Middleware/LaravelMiddleware.php)
+as global on **first position**.
+
+### Other applications
+
+All package services or listeners do not have any external dependencies except PSR interfaces,
+is possible use package for measurement of different types of applications.
+
+You must register some [PerformanceLogConfig](../src/Service/PerformanceLogConfig.php) extends to your application
+as unique global instance (singleton), because in the service state are hold temporary [thresholds overwrites](#thresholds-overwrite),
+and you should overwrite methods `getConfig...`, where you can configure your global thresholds
+or in methods load thresholds from application configuration files.
+
+Thresholds values has behaviour: not zero value will log longer runs then threshold value as warning,
+`null` or zero value turn off measurement, zero value with debug `true` will log running time as debug.
+
+You can look at [LaravelPerformanceLogConfig](../src/Service/LaravelPerformanceLogConfig.php) as example.
+
+You must register [listeners](../src/Listener) to your application as singletons,
+because most listeners has state and hold measurements data inside.
+[PSR-14](https://www.php-fig.org/psr/psr-14/) listeners are callables,
+you can register package listeners by anonymous function adapters.
+
+You can look at [LaravelProvider](../src/Provider/LaravelProvider.php) as example.
+
+For http request time logging you must register [PsrMiddleware](../src/Middleware/PsrMiddleware.php).
+Recommended usage is register middleware as global on **first position** and all of your request will be measured.
 
 ## Thresholds overwrite
 
 ### Sql
 
-If you know than some sql is slow, and you are fine with that you can overwrite `'performance_log.database.slow_query_threshold'`
-or `'performance_log.database.slow_transaction_threshold'` by setting a temporary threshold in `PerformanceLogConfig`.
+If you know than some sql is slow, and you are fine with that you can overwrite global thresholds configuration
+by setting a temporary threshold in [PerformanceLogConfig](../src/Service/PerformanceLogConfig.php).
 
 ```php
-/** @var \SimpleAsFuck\LaravelPerformanceLog\Service\PerformanceLogConfig $config */
-$config = app()->make(\SimpleAsFuck\LaravelPerformanceLog\Service\PerformanceLogConfig::class);
+/** @var \SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig $performanceLogConfig */
 
-$sqlThreshold = $config->setSlowSqlQueryThreshold(null);
-$transactionThreshold = $config->setSlowDbTransactionThreshold(null);
+$sqlThreshold = $performanceLogConfig->setSlowSqlQueryThreshold(null);
+$transactionThreshold = $performanceLogConfig->setSlowDbTransactionThreshold(null);
 
 // run some slow queries without annoying performance log
 
@@ -54,45 +79,46 @@ $transactionThreshold->restore();
 
 ### Http
 
-If you know that some concrete controller action is slow or should be extra fast,
-you can overwrite `'performance_log.http.slow_request_threshold'` by setting a temporary threshold.
-The temporary threshold can be set only once per request and live until request ends.
+If you know that some specific controller action is slow or should be extra fast,
+you can overwrite global threshold configuration by setting a temporary threshold.
+The temporary threshold can be set anywhere in request run and live until a request ends.
 
 ```php
-/** @var \SimpleAsFuck\LaravelPerformanceLog\Service\PerformanceLogConfig $config */
-$config = app()->make(\SimpleAsFuck\LaravelPerformanceLog\Service\PerformanceLogConfig::class);
+/** @var \SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig $performanceLogConfig */
 
-$config->setSlowRequestThreshold(null);
+$performanceLogConfig->setSlowRequestThreshold(null);
 
 // run some extra slow logic without annoying performance log
 
-// no need for threshold restoring, performance middleware will handle it
+// no need for threshold restoring, performance listener will handle it
 ```
 
 ### Console
 
-If you want to overwrite `'performance_log.console.slow_command_threshold'`, you can do it by setting a temporary threshold.
-The temporary threshold can be set only once per command run and live until command ends.
+If you want to overwrite global threshold configuration, you can do it by setting a temporary threshold.
+The temporary threshold can be set anywhere in command run and live until a command ends.
 
 ```php
-/** @var \SimpleAsFuck\LaravelPerformanceLog\Service\PerformanceLogConfig $config */
-$config = app()->make(\SimpleAsFuck\LaravelPerformanceLog\Service\PerformanceLogConfig::class);
+/** @var \SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig $performanceLogConfig */
 
-$config->setSlowCommandThreshold(60); // one minute
+$performanceLogConfig->setSlowCommandThreshold(60); // one minute
+
+// run some measured logic
 
 // no need for threshold restoring, performance listener will handle it
 ```
 
 ### Job
 
-If you want to overwrite `'performance_log.queue.slow_job_threshold'`, you can set a temporary threshold.
+If you want to overwrite global threshold configuration, you can set a temporary threshold.
 The temporary threshold can be set anywhere in job run and live until a job ends.
 
 ```php
-/** @var \SimpleAsFuck\LaravelPerformanceLog\Service\PerformanceLogConfig $config */
-$config = app()->make(\SimpleAsFuck\LaravelPerformanceLog\Service\PerformanceLogConfig::class);
+/** @var \SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig $performanceLogConfig */
 
-$config->setSlowJobThreshold(10000); // 10 seconds
+$performanceLogConfig->setSlowJobThreshold(10000); // 10 seconds
+
+// run some measured logic
 
 // no need for threshold restoring, performance listener will handle it
 ```
