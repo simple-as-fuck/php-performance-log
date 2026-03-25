@@ -73,7 +73,8 @@ class LaravelProvider extends ServiceProvider
 
         /** @var DatabaseManager $databaseManager */
         $databaseManager = $this->app->make(DatabaseManager::class);
-        $databaseDispatcher = $databaseManager->connection()->getEventDispatcher();
+        // todo 0.6 use $dispatcher only
+        $databaseDispatcher = $databaseManager->connection()->getEventDispatcher() ?? $dispatcher;
 
         /** @var DatabaseListener $databaseListener */
         $databaseListener = $this->app->make(DatabaseListener::class);
