@@ -17,7 +17,7 @@ consider package version as unsupported except last version.
 
 ### Measurements support
 
-| Application | Http requests                        | DB transactions          | SQL queries             | Console commands | Queue Jobs             |
+| Application | Http server requests                 | DB transactions          | SQL queries             | Console commands | Queue Jobs             |
 |-------------|--------------------------------------|--------------------------|-------------------------|------------------|------------------------|
 | Laravel     | With middleware use default 1 second | Default 300 milliseconds | Default 50 milliseconds | Default off      | Recommended 40 seconds |
 
@@ -30,7 +30,7 @@ Global thresholds configuration are in `performance_log.php` config, publishable
 php artisan vendor:publish --tag performance-log-config
 ```
 
-For http request time logging you must register [LaravelMiddleware](../src/Middleware/LaravelMiddleware.php)
+For http server request time logging you must register [LaravelMiddleware](../src/Middleware/LaravelMiddleware.php)
 as global on **first position**.
 
 ### Other applications
@@ -55,8 +55,8 @@ you can register package listeners by anonymous function adapters.
 
 You can look at [LaravelProvider](../src/Provider/LaravelProvider.php) as example.
 
-For http request time logging you must register [PsrMiddleware](../src/Middleware/PsrMiddleware.php).
-Recommended usage is register middleware as global on **first position** and all of your request will be measured.
+For http server request time logging you must register [PsrMiddleware](../src/Middleware/PsrMiddleware.php).
+Recommended usage is register middleware as global on **first position** and all of your server request will be measured.
 
 ## Thresholds overwrite
 
@@ -77,7 +77,7 @@ $sqlThreshold->restore();
 $transactionThreshold->restore();
 ```
 
-### Http
+### Http server
 
 If you know that some specific controller action is slow or should be extra fast,
 you can overwrite global threshold configuration by setting a temporary threshold.
