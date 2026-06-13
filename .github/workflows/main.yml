@@ -125,7 +125,7 @@ jobs:
         run: vendor/bin/phpstan analyse
 
   php82d:
-    name: "php 8.2, validator 0.4, laravel 9.0, symfony 6.0"
+    name: "php 8.2, validator 0.4, symfony 6.0"
     runs-on: ubuntu-latest
     container: "nofutur3/php-tests:8.2"
     steps:
@@ -133,7 +133,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install dependencies
-        run: composer update --no-interaction --prefer-lowest --with simple-as-fuck/php-validator:^0.4.0 --with illuminate/contracts:^9.0 --with symfony/http-foundation:^6.0
+        run: composer update --no-interaction --prefer-lowest --with simple-as-fuck/php-validator:^0.4.0 --with symfony/http-foundation:^6.0
 
       - name: Run static analysis
         run: vendor/bin/phpstan analyse
@@ -153,7 +153,7 @@ jobs:
         run: vendor/bin/phpstan analyse
 
   php82a:
-    name: "php 8.2, validator 0.1, laravel 8.0, symfony 5.4, psr log 2.0"
+    name: "php 8.2, validator 0.1, symfony 5.4, psr log 2.0"
     runs-on: ubuntu-latest
     container: "nofutur3/php-tests:8.2"
     steps:
@@ -161,7 +161,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install dependencies
-        run: composer update --no-interaction --prefer-lowest --with simple-as-fuck/php-validator:^0.1.0 --with illuminate/contracts:^8.0 --with symfony/http-foundation:^5.4 --with psr/log:^2.0
+        run: composer update --no-interaction --prefer-lowest --with simple-as-fuck/php-validator:^0.1.0 --with symfony/http-foundation:^5.4 --with psr/log:^2.0
 
       - name: Run static analysis
         run: vendor/bin/phpstan analyse
