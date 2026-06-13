@@ -83,7 +83,7 @@ jobs:
         run: vendor/bin/phpstan analyse
 
   php83a:
-    name: "php 8.3, validator 0.5, laravel 10.0"
+    name: "php 8.3, validator 0.5, laravel 10.49"
     runs-on: ubuntu-latest
     container: "nofutur3/php-tests:8.3"
     steps:
@@ -91,7 +91,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: composer update --no-interaction --prefer-lowest --with simple-as-fuck/php-validator:^0.5.0 --with illuminate/contracts:^10.0
+        run: composer update --no-interaction --prefer-lowest --with simple-as-fuck/php-validator:^0.5.0 --with illuminate/contracts:^10.49
 
       - name: Run static analysis
         run: vendor/bin/phpstan analyse
