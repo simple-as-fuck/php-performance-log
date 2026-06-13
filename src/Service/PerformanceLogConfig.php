@@ -12,7 +12,7 @@ abstract class PerformanceLogConfig
     private ?\WeakReference $temporarySqlQueryThreshold = null;
     /** @var \WeakReference<TemporaryThreshold>|null */
     private ?\WeakReference $temporaryDbTransactionThreshold = null;
-    private ?TemporaryThreshold $temporaryRequestThreshold = null;
+    private ?TemporaryThreshold $temporaryServerRequestThreshold = null;
     private ?TemporaryThreshold $temporaryCommandThreshold = null;
     private ?TemporaryThreshold $temporaryJobThreshold = null;
 
@@ -75,28 +75,54 @@ abstract class PerformanceLogConfig
     }
 
     /**
+     * @deprecated use $this->getSlowRequestThreshold
      * @return float|null threshold value in milliseconds
      */
     final public function getSlowRequestThreshold(): ?float
     {
-        if ($this->temporaryRequestThreshold !== null) {
-            return $this->checkDebugThreshold($this->temporaryRequestThreshold->value());
+        return $this->getSlowServerRequestThreshold();
+    }
+
+    /**
+     * @return float|null threshold value in milliseconds
+     */
+    final public function getSlowServerRequestThreshold(): ?float
+    {
+        if ($this->temporaryServerRequestThreshold !== null) {
+            return $this->checkDebugThreshold($this->temporaryServerRequestThreshold->value());
         }
 
-        return $this->checkDebugThreshold($this->getConfigSlowRequestThreshold());
+        return $this->checkDebugThreshold($this->getConfigSlowServerRequestThreshold());
+    }
+
+    /**
+     * @deprecated use $this->setSlowServerRequestThreshold
+     * @param float|null $threshold value in milliseconds
+     */
+    final public function setSlowRequestThreshold(?float $threshold): void
+    {
+        $this->setSlowServerRequestThreshold($threshold);
+    }
+
+    /**
+     * @deprecated use $this->restoreSlowServerRequestThreshold
+     */
+    final public function restoreSlowRequestThreshold(): void
+    {
+        $this->restoreSlowServerRequestThreshold();
     }
 
     /**
      * @param float|null $threshold value in milliseconds
      */
-    final public function setSlowRequestThreshold(?float $threshold): void
+    final public function setSlowServerRequestThreshold(?float $threshold): void
     {
-        $this->temporaryRequestThreshold = new TemporaryThreshold($threshold, null);
+        $this->temporaryServerRequestThreshold = new TemporaryThreshold($threshold, null);
     }
 
-    final public function restoreSlowRequestThreshold(): void
+    final public function restoreSlowServerRequestThreshold(): void
     {
-        $this->temporaryRequestThreshold = null;
+        $this->temporaryServerRequestThreshold = null;
     }
 
     /**
@@ -171,9 +197,18 @@ abstract class PerformanceLogConfig
     }
 
     /**
+     * @deprecated use $this->getConfigSlowServerRequestThreshold
      * @return float|null threshold value in milliseconds
      */
     protected function getConfigSlowRequestThreshold(): ?float
+    {
+        return $this->getConfigSlowServerRequestThreshold();
+    }
+
+    /**
+     * @return float|null threshold value in milliseconds
+     */
+    protected function getConfigSlowServerRequestThreshold(): ?float
     {
         return 1000;
     }

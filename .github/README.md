@@ -86,7 +86,7 @@ The temporary threshold can be set anywhere in request run and live until a requ
 ```php
 /** @var \SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig $performanceLogConfig */
 
-$performanceLogConfig->setSlowRequestThreshold(null);
+$performanceLogConfig->setSlowServerRequestThreshold(null);
 
 // run some extra slow logic without annoying performance log
 

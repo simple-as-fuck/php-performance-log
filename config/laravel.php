@@ -19,7 +19,7 @@ return [
     ],
     'http' => [
         // define threshold for whole http server request
-        'slow_request_threshold' => 1000,
+        'slow_server_request_threshold' => 1000,
     ],
     'console' => [
         // define threshold for whole console command

@@ -46,13 +46,18 @@ class LaravelPerformanceLogConfig extends PerformanceLogConfig
     /**
      * @return float|null threshold value in milliseconds
      */
-    protected function getConfigSlowRequestThreshold(): ?float
+    protected function getConfigSlowServerRequestThreshold(): ?float
     {
+        if ($this->config->has('performance_log.http.slow_server_request_threshold')) {
+            return $this->getConfigValue('performance_log.http.slow_server_request_threshold')->float()->min(0)->nullable();
+        }
+
+        /** @deprecated backward compatibility will be removed in 0.8, in 0.7 will trigger deprecated error! */
         if ($this->config->has('performance_log.http.slow_request_threshold')) {
             return $this->getConfigValue('performance_log.http.slow_request_threshold')->float()->min(0)->nullable();
         }
 
-        return parent::getConfigSlowRequestThreshold();
+        return parent::getConfigSlowServerRequestThreshold();
     }
 
     /**

@@ -23,16 +23,16 @@ class HttpServerListener
 
     public function onRequestStart(): void
     {
-        $this->performanceLogConfig->restoreSlowRequestThreshold();
+        $this->performanceLogConfig->restoreSlowServerRequestThreshold();
         $this->stopwatch->start($this->measurement);
     }
 
     public function onRequestFinish(string $requestMethod, string $requestUrl): void
     {
-        $threshold = $this->performanceLogConfig->getSlowRequestThreshold();
+        $threshold = $this->performanceLogConfig->getSlowServerRequestThreshold();
         $time = $this->stopwatch->finishMilliseconds($this->measurement);
 
-        $this->performanceLogConfig->restoreSlowRequestThreshold();
+        $this->performanceLogConfig->restoreSlowServerRequestThreshold();
 
         if ($threshold === null) {
             return;
