@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace SimpleAsFuck\PerformanceLog\Middleware;
 
 use Illuminate\Http\Request;
-use SimpleAsFuck\PerformanceLog\Listener\HttpListener;
+use SimpleAsFuck\PerformanceLog\Listener\HttpServerListener;
 use Symfony\Component\HttpFoundation\Response;
 
 final readonly class LaravelMiddleware
 {
     public function __construct(
-        private HttpListener $httpListener,
+        private HttpServerListener $httpServerListener,
     ) {
     }
 
@@ -20,9 +20,9 @@ final readonly class LaravelMiddleware
      */
     public function handle(Request $request, \Closure $next): Response
     {
-        $this->httpListener->onRequestStart();
+        $this->httpServerListener->onRequestStart();
         $response = $next($request);
-        $this->httpListener->onRequestFinish($request->method(), $request->fullUrl());
+        $this->httpServerListener->onRequestFinish($request->method(), $request->fullUrl());
         return $response;
     }
 }

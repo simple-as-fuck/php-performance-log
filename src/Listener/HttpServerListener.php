@@ -9,7 +9,7 @@ use SimpleAsFuck\PerformanceLog\Data\Measurement;
 use SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig;
 use SimpleAsFuck\PerformanceLog\Service\Stopwatch;
 
-class HttpListener
+class HttpServerListener
 {
     private readonly Measurement $measurement;
 

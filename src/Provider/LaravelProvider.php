@@ -20,7 +20,7 @@ use Illuminate\Support\ServiceProvider;
 use Psr\Log\LoggerInterface;
 use SimpleAsFuck\PerformanceLog\Listener\ConsoleListener;
 use SimpleAsFuck\PerformanceLog\Listener\DatabaseListener;
-use SimpleAsFuck\PerformanceLog\Listener\HttpListener;
+use SimpleAsFuck\PerformanceLog\Listener\HttpServerListener;
 use SimpleAsFuck\PerformanceLog\Listener\QueueListener;
 use SimpleAsFuck\PerformanceLog\Service\LaravelPerformanceLogConfig;
 use SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig;
@@ -43,7 +43,7 @@ class LaravelProvider extends ServiceProvider
             $this->makePerformanceLogConfig(),
             $this->makeStopwatch(),
         ));
-        $this->app->singleton(HttpListener::class, fn () => new HttpListener(
+        $this->app->singleton(HttpServerListener::class, fn () => new HttpServerListener(
             $this->makePerformanceLogger(),
             $this->makePerformanceLogConfig(),
             $this->makeStopwatch(),

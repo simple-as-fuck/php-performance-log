@@ -8,20 +8,20 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use SimpleAsFuck\PerformanceLog\Listener\HttpListener;
+use SimpleAsFuck\PerformanceLog\Listener\HttpServerListener;
 
 final readonly class PsrMiddleware implements MiddlewareInterface
 {
     public function __construct(
-        private HttpListener $httpListener,
+        private HttpServerListener $httpServerListener,
     ) {
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $this->httpListener->onRequestStart();
+        $this->httpServerListener->onRequestStart();
         $response = $handler->handle($request);
-        $this->httpListener->onRequestFinish($request->getMethod(), (string) $request->getUri());
+        $this->httpServerListener->onRequestFinish($request->getMethod(), (string) $request->getUri());
         return $response;
     }
 }
