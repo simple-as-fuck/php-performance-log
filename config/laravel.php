@@ -18,6 +18,8 @@ return [
         'slow_transaction_threshold' => 300,
     ],
     'http' => [
+        // define threshold for http client request call
+        'slow_client_request_threshold' => 700,
         // define threshold for whole http server request
         'slow_server_request_threshold' => 1000,
     ],

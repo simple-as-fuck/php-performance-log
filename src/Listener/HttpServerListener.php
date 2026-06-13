@@ -38,11 +38,11 @@ class HttpServerListener
             return;
         }
         if ($threshold === 0.0) {
-            $this->logger->debug('Http server request time: '.$time.'ms method: "'.$requestMethod.'" url: "'.$requestUrl.'" pid: '.\getmypid());
+            $this->logger->debug('Http server request time: '.$time.'ms method: '.$requestMethod.' url: "'.$requestUrl.'" pid: '.\getmypid());
             return;
         }
         if ($time >= $threshold) {
-            $this->logger->warning('Http server request is too slow: '.$time.'ms method: "'.$requestMethod.'" url: "'.$requestUrl.'" threshold: '.$threshold.'ms pid: '.\getmypid());
+            $this->logger->warning('Http server request is too slow: '.$time.'ms method: '.$requestMethod.' url: "'.$requestUrl.'" threshold: '.$threshold.'ms pid: '.\getmypid());
         }
     }
 }

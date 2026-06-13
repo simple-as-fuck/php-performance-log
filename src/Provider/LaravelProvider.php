@@ -12,6 +12,7 @@ use Illuminate\Database\Events\TransactionBeginning;
 use Illuminate\Database\Events\TransactionCommitted;
 use Illuminate\Database\Events\TransactionRolledBack;
 use Illuminate\Events\Dispatcher;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Log\LogManager;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
@@ -20,8 +21,10 @@ use Illuminate\Support\ServiceProvider;
 use Psr\Log\LoggerInterface;
 use SimpleAsFuck\PerformanceLog\Listener\ConsoleListener;
 use SimpleAsFuck\PerformanceLog\Listener\DatabaseListener;
+use SimpleAsFuck\PerformanceLog\Listener\HttpClientListener;
 use SimpleAsFuck\PerformanceLog\Listener\HttpServerListener;
 use SimpleAsFuck\PerformanceLog\Listener\QueueListener;
+use SimpleAsFuck\PerformanceLog\Middleware\GuzzleMiddleware;
 use SimpleAsFuck\PerformanceLog\Service\LaravelPerformanceLogConfig;
 use SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig;
 use SimpleAsFuck\PerformanceLog\Service\Stopwatch;
@@ -39,6 +42,11 @@ class LaravelProvider extends ServiceProvider
             $this->makeStopwatch(),
         ));
         $this->app->singleton(DatabaseListener::class, fn () => new DatabaseListener(
+            $this->makePerformanceLogger(),
+            $this->makePerformanceLogConfig(),
+            $this->makeStopwatch(),
+        ));
+        $this->app->singleton(HttpClientListener::class, fn () => new HttpClientListener(
             $this->makePerformanceLogger(),
             $this->makePerformanceLogConfig(),
             $this->makeStopwatch(),
@@ -64,6 +72,8 @@ class LaravelProvider extends ServiceProvider
         $this->app->make('events');
         /** @var Dispatcher $dispatcher */
         $dispatcher = $this->app->make(Dispatcher::class);
+        /** @var Factory $httpFactory */
+        $httpFactory = $this->app->make(Factory::class);
 
         /** @var ConsoleListener $consoleListener */
         $consoleListener = $this->app->make(ConsoleListener::class);
@@ -77,6 +87,10 @@ class LaravelProvider extends ServiceProvider
         $dispatcher->listen(TransactionBeginning::class, static fn (TransactionBeginning $transaction) => $databaseListener->onTransactionStart($transaction->connection->transactionLevel(), $transaction->connectionName));
         $dispatcher->listen(TransactionRolledBack::class, static fn (TransactionRolledBack $transaction) => $databaseListener->onTransactionFinnish($transaction->connection->transactionLevel(), $transaction->connectionName));
         $dispatcher->listen(TransactionCommitted::class, static fn (TransactionCommitted $transaction) => $databaseListener->onTransactionFinnish($transaction->connection->transactionLevel(), $transaction->connectionName));
+
+        /** @var HttpClientListener $httpClientListener */
+        $httpClientListener = $this->app->make(HttpClientListener::class);
+        $httpFactory->globalMiddleware(new GuzzleMiddleware($httpClientListener));
 
         $queueListener = $this->app->make(QueueListener::class);
         /** @phpstan-ignore-next-line laravel developers are imbeciles in reality getJobId for now return int|string */

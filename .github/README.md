@@ -17,9 +17,10 @@ consider package version as unsupported except last version.
 
 ### Measurements support
 
-| Application | Http server requests                 | DB transactions          | SQL queries             | Console commands | Queue Jobs             |
-|-------------|--------------------------------------|--------------------------|-------------------------|------------------|------------------------|
-| Laravel     | With middleware use default 1 second | Default 300 milliseconds | Default 50 milliseconds | Default off      | Recommended 40 seconds |
+| Tools                                | Http server requests                  | Http client requests                                                 | DB transactions                       | SQL queries             | Console commands | Queue Jobs             |
+|--------------------------------------|---------------------------------------|----------------------------------------------------------------------|---------------------------------------|-------------------------|------------------|------------------------|
+| [Laravel](https://laravel.com/docs)  | With middleware use, default 1 second | Guzzle with handler stack build by Laravel, default 700 milliseconds | Default 300 milliseconds              | Default 50 milliseconds | Default off      | Recommended 40 seconds |
+| [Guzzle](https://docs.guzzlephp.org) | Unsupported                           | With middleware use, default 700 milliseconds                        | Unsupported                           | Unsupported             | Unsupported      | Unsupported            |
 
 
 ### Laravel application
@@ -32,6 +33,11 @@ php artisan vendor:publish --tag performance-log-config
 
 For http server request time logging you must register [LaravelMiddleware](../src/Middleware/LaravelMiddleware.php)
 as global on **first position**.
+
+### Application with Guzzle
+
+For http client request time logging you must register [GuzzleMiddleware](../src/Middleware/GuzzleMiddleware.php)
+to your guzzle instance.
 
 ### Other applications
 
@@ -75,6 +81,21 @@ $transactionThreshold = $performanceLogConfig->setSlowDbTransactionThreshold(nul
 
 $sqlThreshold->restore();
 $transactionThreshold->restore();
+```
+
+### Http client
+
+If you know that some webservice is slow or some your microservice dependency should be extra fast,
+you can overwrite global threshold configuration by setting a temporary threshold.
+
+```php
+/** @var \SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig $performanceLogConfig */
+
+$requestThreshold = $performanceLogConfig->setSlowClientRequestThreshold(null);
+
+// call http requests by your client
+
+$requestThreshold->restore();
 ```
 
 ### Http server
