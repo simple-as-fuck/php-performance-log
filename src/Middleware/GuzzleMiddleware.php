@@ -29,9 +29,9 @@ final readonly class GuzzleMiddleware
                     $this->httpClientListener->onRequestFinish($request);
                     return $response;
                 },
-                onRejected: function (ResponseInterface $response) use ($request): ResponseInterface {
+                onRejected: function (\Throwable $exception) use ($request): never {
                     $this->httpClientListener->onRequestFinish($request);
-                    return $response;
+                    throw $exception;
                 },
             );
         };
