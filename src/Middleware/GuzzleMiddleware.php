@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SimpleAsFuck\PerformanceLog\Middleware;
 
+use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -29,9 +30,9 @@ final readonly class GuzzleMiddleware
                     $this->httpClientListener->onRequestFinish($request);
                     return $response;
                 },
-                onRejected: function (\Throwable $exception) use ($request): never {
+                onRejected: function (mixed $reason) use ($request): PromiseInterface {
                     $this->httpClientListener->onRequestFinish($request);
-                    throw $exception;
+                    return Create::rejectionFor($reason);
                 },
             );
         };
