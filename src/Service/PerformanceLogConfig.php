@@ -106,7 +106,7 @@ abstract class PerformanceLogConfig
     }
 
     /**
-     * @deprecated use $this->getSlowRequestThreshold
+     * @deprecated use $this->getSlowServerRequestThreshold
      * @return float|null threshold value in milliseconds
      */
     final public function getSlowRequestThreshold(): ?float
