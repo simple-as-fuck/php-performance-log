@@ -80,11 +80,11 @@ class LaravelProvider extends ServiceProvider
 
         $queueListener = $this->app->make(QueueListener::class);
         /** @phpstan-ignore-next-line laravel developers are imbeciles in reality getJobId for now return int|string */
-        $dispatcher->listen(JobProcessing::class, static fn (JobProcessing $job) => $queueListener->onJobStart((string) $job->job->getJobId()));
+        $dispatcher->listen(JobProcessing::class, static fn (JobProcessing $job) => $queueListener->onJobStart($job->job->resolveName() . '-' . ((string) $job->job->getJobId())));
         /** @phpstan-ignore-next-line laravel developers are imbeciles in reality getJobId for now return int|string */
-        $dispatcher->listen(JobFailed::class, static fn (JobFailed $job) => $queueListener->onJobFinish($job->job->resolveName(), (string) $job->job->getJobId()));
+        $dispatcher->listen(JobFailed::class, static fn (JobFailed $job) => $queueListener->onJobFinish($job->job->resolveName(), $job->job->resolveName() . '-' . ((string) $job->job->getJobId())));
         /** @phpstan-ignore-next-line laravel developers are imbeciles in reality getJobId for now return int|string */
-        $dispatcher->listen(JobProcessed::class, static fn (JobProcessed $job) => $queueListener->onJobFinish($job->job->resolveName(), (string) $job->job->getJobId()));
+        $dispatcher->listen(JobProcessed::class, static fn (JobProcessed $job) => $queueListener->onJobFinish($job->job->resolveName(), $job->job->resolveName() . '-' . ((string) $job->job->getJobId())));
     }
 
     private function makePerformanceLogger(): LoggerInterface
