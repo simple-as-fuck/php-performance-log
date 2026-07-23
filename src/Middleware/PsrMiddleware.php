@@ -20,8 +20,10 @@ final readonly class PsrMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $this->httpListener->onRequestStart();
-        $response = $handler->handle($request);
-        $this->httpListener->onRequestFinish($request->getMethod(), (string) $request->getUri());
-        return $response;
+        try {
+            return $handler->handle($request);
+        } finally {
+            $this->httpListener->onRequestFinish($request->getMethod(), (string) $request->getUri());
+        }
     }
 }
