@@ -21,8 +21,10 @@ final readonly class LaravelMiddleware
     public function handle(Request $request, \Closure $next): Response
     {
         $this->httpServerListener->onRequestStart();
-        $response = $next($request);
-        $this->httpServerListener->onRequestFinish($request->method(), $request->fullUrl());
-        return $response;
+        try {
+            return $next($request);
+        } finally {
+            $this->httpServerListener->onRequestFinish($request->method(), $request->fullUrl());
+        }
     }
 }
