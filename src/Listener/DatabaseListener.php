@@ -68,7 +68,7 @@ class DatabaseListener
             return;
         }
 
-        if ($this->transactionMeasurement->startAt($connectionName) === null) {
+        if ($this->transactionMeasurement->get($connectionName) === null) {
             $this->logger->error('Database transaction measurement not running database connection: "'.$connectionName.'" pid: '.\getmypid().', check if begin transaction is called before commit/rollback!');
             return;
         }

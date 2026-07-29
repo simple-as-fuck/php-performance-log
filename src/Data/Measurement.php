@@ -11,21 +11,39 @@ final class Measurement
     private ?float $nullStartAt = null;
 
     /**
+     * @deprecated use set
      * @param float $time in seconds
      */
     public function start(?string $prefix, float $time): void
     {
+        $this->set($prefix, $time);
+    }
+
+    /**
+     * @param float $time in seconds
+     */
+    public function set(?string $prefix, float $time): void
+    {
         if ($prefix === null) {
             $this->nullStartAt = $time;
+        } else {
+            $this->startsAt[$prefix] = $time;
         }
+    }
 
-        $this->startsAt[$prefix] = $time;
+    /**
+     * @deprecated use get
+     * @return float|null time in seconds
+     */
+    public function startAt(?string $prefix): ?float
+    {
+        return $this->get($prefix);
     }
 
     /**
      * @return float|null time in seconds
      */
-    public function startAt(?string $prefix): ?float
+    public function get(?string $prefix): ?float
     {
         if ($prefix === null) {
             return $this->nullStartAt;
@@ -35,15 +53,25 @@ final class Measurement
     }
 
     /**
+     * @deprecated use pop
      * @return float time in seconds
      */
     public function finnish(?string $prefix): float
     {
-        $time = $this->startAt($prefix);
+        $time = $this->pop($prefix);
         if ($time === null) {
             throw new \LogicException('Measurement with prefix: "'.$prefix.'" not started!');
         }
 
+        return $time;
+    }
+
+    /**
+     * @return float|null time in seconds
+     */
+    public function pop(?string $prefix): ?float
+    {
+        $time = $this->get($prefix);
         if ($prefix === null) {
             $this->nullStartAt = null;
         } else {
@@ -51,5 +79,16 @@ final class Measurement
         }
 
         return $time;
+    }
+
+    /**
+     * @return array{null: float|null, named: array<string, float>}
+     */
+    public function dump(): array
+    {
+        return [
+            'null' => $this->nullStartAt,
+            'named' => $this->startsAt,
+        ];
     }
 }

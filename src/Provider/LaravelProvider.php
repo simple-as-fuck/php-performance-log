@@ -34,7 +34,9 @@ class LaravelProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(PerformanceLogConfig::class, LaravelPerformanceLogConfig::class);
-        $this->app->singleton(Stopwatch::class);
+        $this->app->singleton(Stopwatch::class, fn () => new Stopwatch(
+            $this->makePerformanceLogger(),
+        ));
 
         $this->app->singleton(ConsoleListener::class, fn () => new ConsoleListener(
             $this->makePerformanceLogger(),
