@@ -14,7 +14,7 @@ class Stopwatch
      */
     public function __construct(
         private readonly ?LoggerInterface $logger = null,
-    ){
+    ) {
     }
 
     public function start(Measurement $measurement, ?string $prefix = null): void
