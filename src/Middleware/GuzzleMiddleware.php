@@ -7,7 +7,6 @@ namespace SimpleAsFuck\PerformanceLog\Middleware;
 use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 use SimpleAsFuck\PerformanceLog\Listener\HttpClientListener;
 
 final readonly class GuzzleMiddleware
@@ -26,7 +25,7 @@ final readonly class GuzzleMiddleware
         return function (RequestInterface $request, array $options) use ($handler): PromiseInterface {
             $this->httpClientListener->onRequestStart($request);
             return $handler($request, $options)->then(
-                onFulfilled: function (ResponseInterface $response) use ($request): ResponseInterface {
+                onFulfilled: function ($response) use ($request) {
                     $this->httpClientListener->onRequestFinish($request);
                     return $response;
                 },
