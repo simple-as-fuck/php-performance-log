@@ -102,7 +102,8 @@ $requestThreshold->restore();
 
 If you know that some specific controller action is slow or should be extra fast,
 you can overwrite global threshold configuration by setting a temporary threshold.
-The temporary threshold can be set anywhere in request run and live until a request ends.
+The temporary threshold can be set anywhere and multiple times in request run last set take effect
+and live until a request ends.
 
 ```php
 /** @var \SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig $performanceLogConfig */
@@ -117,7 +118,7 @@ $performanceLogConfig->setSlowServerRequestThreshold(null);
 ### Console
 
 If you want to overwrite global threshold configuration, you can do it by setting a temporary threshold.
-The temporary threshold can be set anywhere in command run and live until a command ends.
+The temporary threshold can be set anywhere and multiple times in command run last set take effect and live until a command ends.
 
 ```php
 /** @var \SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig $performanceLogConfig */
@@ -132,7 +133,7 @@ $performanceLogConfig->setSlowCommandThreshold(60); // one minute
 ### Job
 
 If you want to overwrite global threshold configuration, you can set a temporary threshold.
-The temporary threshold can be set anywhere in job run and live until a job ends.
+The temporary threshold can be set anywhere and multiple times in job run last set take effect and live until a job ends.
 
 ```php
 /** @var \SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig $performanceLogConfig */
