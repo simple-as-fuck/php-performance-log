@@ -67,8 +67,8 @@ class LaravelPerformanceLogConfig extends PerformanceLogConfig
             return $this->getConfigValue('performance_log.http.slow_server_request_threshold')->float()->min(0)->nullable();
         }
 
-        /** @deprecated backward compatibility will be removed in 0.8, in 0.7 will trigger deprecated error! */
         if ($this->config->has('performance_log.http.slow_request_threshold')) {
+            \trigger_error('Config key performance_log.http.slow_request_threshold is deprecated will be removed in 0.8 use performance_log.http.slow_server_request_threshold', \E_USER_DEPRECATED);
             return $this->getConfigValue('performance_log.http.slow_request_threshold')->float()->min(0)->nullable();
         }
 

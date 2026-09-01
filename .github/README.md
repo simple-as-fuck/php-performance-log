@@ -49,8 +49,10 @@ as unique global instance (singleton), because in the service state are hold tem
 and you should overwrite methods `getConfig...`, where you can configure your global thresholds
 or in methods load thresholds from application configuration files.
 
-Thresholds values has behaviour: not zero value will log longer runs then threshold value as warning,
-`null` or zero value turn off measurement, zero value with debug `true` will log running time as debug.
+Thresholds values has behaviour:
+not zero value will log longer runs then threshold value as warning,
+`null` value turn off measurement,
+zero value will log running time as debug.
 
 You can look at [LaravelPerformanceLogConfig](../src/Service/LaravelPerformanceLogConfig.php) as example.
 

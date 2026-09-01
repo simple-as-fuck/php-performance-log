@@ -25,10 +25,10 @@ abstract class PerformanceLogConfig
     {
         $temporaryThreshold = self::getTemporaryThreshold($this->temporarySqlQueryThreshold);
         if ($temporaryThreshold !== null) {
-            return self::checkDebugThreshold($temporaryThreshold->value());
+            return $temporaryThreshold->value();
         }
 
-        return self::checkDebugThreshold($this->getConfigSlowSqlQueryThreshold());
+        return $this->getConfigSlowSqlQueryThreshold();
     }
 
     /**
@@ -54,10 +54,10 @@ abstract class PerformanceLogConfig
     {
         $temporaryThreshold = self::getTemporaryThreshold($this->temporaryDbTransactionThreshold);
         if ($temporaryThreshold !== null) {
-            return self::checkDebugThreshold($temporaryThreshold->value());
+            return $temporaryThreshold->value();
         }
 
-        return self::checkDebugThreshold($this->getConfigSlowDbTransactionThreshold());
+        return $this->getConfigSlowDbTransactionThreshold();
     }
 
     /**
@@ -83,10 +83,10 @@ abstract class PerformanceLogConfig
     {
         $temporaryThreshold = self::getTemporaryThreshold($this->temporaryClientRequestThreshold);
         if ($temporaryThreshold !== null) {
-            return self::checkDebugThreshold($temporaryThreshold->value());
+            return $temporaryThreshold->value();
         }
 
-        return self::checkDebugThreshold($this->getConfigSlowClientRequestThreshold());
+        return $this->getConfigSlowClientRequestThreshold();
     }
 
     /**
@@ -120,10 +120,10 @@ abstract class PerformanceLogConfig
     final public function getSlowServerRequestThreshold(): ?float
     {
         if ($this->temporaryServerRequestThreshold !== null) {
-            return self::checkDebugThreshold($this->temporaryServerRequestThreshold->value());
+            return $this->temporaryServerRequestThreshold->value();
         }
 
-        return self::checkDebugThreshold($this->getConfigSlowServerRequestThreshold());
+        return $this->getConfigSlowServerRequestThreshold();
     }
 
     /**
@@ -162,10 +162,10 @@ abstract class PerformanceLogConfig
     final public function getSlowCommandThreshold(): ?float
     {
         if ($this->temporaryCommandThreshold !== null) {
-            return self::checkDebugThreshold($this->temporaryCommandThreshold->value());
+            return $this->temporaryCommandThreshold->value();
         }
 
-        return self::checkDebugThreshold($this->getConfigSlowCommandThreshold());
+        return $this->getConfigSlowCommandThreshold();
     }
 
     /**
@@ -187,10 +187,10 @@ abstract class PerformanceLogConfig
     final public function getSlowJobThreshold(): ?float
     {
         if ($this->temporaryJobThreshold !== null) {
-            return $this->checkDebugThreshold($this->temporaryJobThreshold->value());
+            return $this->temporaryJobThreshold->value();
         }
 
-        return $this->checkDebugThreshold($this->getConfigSlowJobThreshold());
+        return $this->getConfigSlowJobThreshold();
     }
 
     /**
@@ -284,20 +284,6 @@ abstract class PerformanceLogConfig
         if ($threshold === null || $threshold->isRestored()) {
             $weakReference = null;
             return null;
-        }
-
-        return $threshold;
-    }
-
-    /**
-     * @deprecated will be removed
-     */
-    private function checkDebugThreshold(?float $threshold): ?float
-    {
-        if ($threshold === 0.0) {
-            if ($this->getConfigDebug() === false) {
-                return null;
-            }
         }
 
         return $threshold;

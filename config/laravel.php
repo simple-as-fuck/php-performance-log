@@ -9,7 +9,7 @@ return [
     // thresholds definitions, if anything run longer than threshold service will log warning
     // all thresholds are float value in milliseconds
     // null threshold will turn off any measuring
-    // threshold zero value with 'app.debug' true value will log running time for anything as debug
+    // threshold zero value will log running time for anything as debug
     'database' => [
         // define threshold for single database query
         'slow_query_threshold' => 50,

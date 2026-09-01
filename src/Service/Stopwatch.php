@@ -9,11 +9,8 @@ use SimpleAsFuck\PerformanceLog\Data\Measurement;
 
 class Stopwatch
 {
-    /**
-     * @todo 0.7 make $logger not null
-     */
     public function __construct(
-        private readonly ?LoggerInterface $logger = null,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -31,7 +28,7 @@ class Stopwatch
     {
         $startTime = $measurement->pop($prefix);
         if ($startTime === null) {
-            $this->logger?->warning('Measurement with prefix: "'.$prefix.'" not started!', [
+            $this->logger->warning('Measurement with prefix: "'.$prefix.'" not started!', [
                 'running_measurements' => $measurement->dump(),
             ]);
             return 0;
