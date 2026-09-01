@@ -206,6 +206,9 @@ abstract class PerformanceLogConfig
         $this->temporaryJobThreshold = null;
     }
 
+    /**
+     * @deprecated will be removed
+     */
     protected function getConfigDebug(): bool
     {
         return false;
@@ -286,6 +289,9 @@ abstract class PerformanceLogConfig
         return $threshold;
     }
 
+    /**
+     * @deprecated will be removed
+     */
     private function checkDebugThreshold(?float $threshold): ?float
     {
         if ($threshold === 0.0) {
