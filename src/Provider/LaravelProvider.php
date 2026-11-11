@@ -7,6 +7,7 @@ namespace SimpleAsFuck\PerformanceLog\Provider;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Contracts\Config\Repository;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\Events\TransactionBeginning;
 use Illuminate\Database\Events\TransactionCommitted;
@@ -85,7 +86,7 @@ class LaravelProvider extends ServiceProvider
         /** @var DatabaseListener $databaseListener */
         $databaseListener = $this->app->make(DatabaseListener::class);
         /** @phpstan-ignore-next-line laravel developers are imbeciles in reality time for now return float|null */
-        $dispatcher->listen(QueryExecuted::class, static fn (QueryExecuted $query) => $databaseListener->onSqlQuery($query->sql, $query->time ?? 0.0, $query->connectionName));
+        $dispatcher->listen(QueryExecuted::class, static fn (QueryExecuted $query) => $databaseListener->onSqlQuery($query->sql, $query->time ?? 0.0, $query->connectionName, self::getConnectedPdo($query->connection), $query->connection->prepareBindings($query->bindings)));
         $dispatcher->listen(TransactionBeginning::class, static fn (TransactionBeginning $transaction) => $databaseListener->onTransactionStart($transaction->connection->transactionLevel(), $transaction->connectionName));
         $dispatcher->listen(TransactionRolledBack::class, static fn (TransactionRolledBack $transaction) => $databaseListener->onTransactionFinnish($transaction->connection->transactionLevel(), $transaction->connectionName));
         $dispatcher->listen(TransactionCommitted::class, static fn (TransactionCommitted $transaction) => $databaseListener->onTransactionFinnish($transaction->connection->transactionLevel(), $transaction->connectionName));
@@ -115,6 +116,18 @@ class LaravelProvider extends ServiceProvider
             $performanceLogChanel = null;
         }
         return $logManager->channel($performanceLogChanel);
+    }
+
+    // only already connected PDO is used, so the listener never opens a new database connection
+    private static function getConnectedPdo(Connection $connection): ?\PDO
+    {
+        $pdo = $connection->getRawReadPdo();
+        if ($pdo instanceof \PDO) {
+            return $pdo;
+        }
+
+        $pdo = $connection->getRawPdo();
+        return $pdo instanceof \PDO ? $pdo : null;
     }
 
     private function makePerformanceLogConfig(): PerformanceLogConfig

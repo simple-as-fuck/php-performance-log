@@ -12,6 +12,8 @@ use SimpleAsFuck\PerformanceLog\Service\Stopwatch;
 class DatabaseListener
 {
     private readonly Measurement $transactionMeasurement;
+    // queries executed by the explain are never explained again, if some PDO wrapper reports them to the listener
+    private bool $explaining = false;
 
     public function __construct(
         private readonly LoggerInterface $logger,
@@ -23,21 +25,62 @@ class DatabaseListener
 
     /**
      * @param float $time in milliseconds
+     * @param array<mixed> $bindings
      */
-    public function onSqlQuery(string $sql, float $time, ?string $connectionName): void
+    public function onSqlQuery(string $sql, float $time, ?string $connectionName, ?\PDO $pdo = null, array $bindings = []): void
     {
         $queryThreshold = $this->performanceLogConfig->getSlowSqlQueryThreshold();
+        $explain = $pdo === null ? [] : $this->explainSqlQuery($sql, $time, $pdo, $bindings);
 
-        if ($queryThreshold === null) {
-            return;
-        }
         if ($queryThreshold === 0.0) {
-            $this->logger->debug('Database query time: '.$time.'ms sql: "'.$sql.'" connection: "'.$connectionName.'" pid: '.\getmypid());
-            return;
+            $this->logger->debug('Database query time: '.$time.'ms sql: "'.$sql.'" connection: "'.$connectionName.'" pid: '.\getmypid(), $explain);
+        } elseif ($queryThreshold !== null && $time >= $queryThreshold) {
+            $this->logger->warning('Database query is too slow: '.$time.'ms sql: "'.$sql.'" threshold: '.$queryThreshold. 'ms connection: "'.$connectionName.'" pid: '.\getmypid(), $explain);
+        } elseif ($explain !== []) {
+            $this->logger->debug('Database query explain: '.$time.'ms sql: "'.$sql.'" connection: "'.$connectionName.'" pid: '.\getmypid(), $explain);
         }
-        if ($time >= $queryThreshold) {
-            $this->logger->warning('Database query is too slow: '.$time.'ms sql: "'.$sql.'" threshold: '.$queryThreshold. 'ms connection: "'.$connectionName.'" pid: '.\getmypid());
+    }
+
+    /**
+     * @param float $time in milliseconds
+     * @param array<mixed> $bindings
+     * @return array{explain?: list<array<mixed>>, explain_exception?: class-string<\Throwable>} log context
+     */
+    private function explainSqlQuery(string $sql, float $time, \PDO $pdo, array $bindings): array
+    {
+        $threshold = $this->performanceLogConfig->getSlowSqlQueryExplainThreshold();
+        if ($this->explaining || $threshold === null || $time < $threshold) {
+            return [];
         }
+        if (\preg_match('/\A\s*select.*/i', $sql) !== 1) {
+            return [];
+        }
+        // only the tabular explain of mysql, explain of another database can contain values from the query
+        if ($pdo->getAttribute(\PDO::ATTR_DRIVER_NAME) !== 'mysql') {
+            return [];
+        }
+
+        $this->explaining = true;
+        try {
+            $statement = $pdo->prepare('EXPLAIN '.$sql);
+            if ($statement === false) {
+                throw new \RuntimeException('Database query explain prepare failed');
+            }
+            // bindValue keeps the data types unlike execute parameters, but positional parameters are indexed from 1
+            foreach ($bindings as $key => $value) {
+                $statement->bindValue(\is_string($key) ? $key : $key + 1, $value, \is_int($value) ? \PDO::PARAM_INT : \PDO::PARAM_STR);
+            }
+            $statement->execute();
+            /** @var list<array<mixed>> $explain */
+            $explain = $statement->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (\Throwable $exception) {
+            // the exception message can contain values from the query, so only the exception type is logged
+            return ['explain_exception' => $exception::class];
+        } finally {
+            $this->explaining = false;
+        }
+
+        return ['explain' => $explain];
     }
 
     public function onTransactionStart(int $transactionLevel, ?string $connectionName): void
