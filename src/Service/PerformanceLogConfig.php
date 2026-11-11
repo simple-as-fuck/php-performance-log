@@ -11,6 +11,8 @@ abstract class PerformanceLogConfig
     /** @var \WeakReference<TemporaryThreshold>|null */
     private ?\WeakReference $temporarySqlQueryThreshold = null;
     /** @var \WeakReference<TemporaryThreshold>|null */
+    private ?\WeakReference $temporarySqlQueryDebugThreshold = null;
+    /** @var \WeakReference<TemporaryThreshold>|null */
     private ?\WeakReference $temporaryDbTransactionThreshold = null;
     private ?TemporaryThreshold $temporaryServerRequestThreshold = null;
     /** @var \WeakReference<TemporaryThreshold>|null */
@@ -50,9 +52,30 @@ abstract class PerformanceLogConfig
     /**
      * @return float|null threshold value in milliseconds
      */
-    final public function getSlowSqlQueryExplainThreshold(): ?float
+    final public function getSlowSqlQueryDebugThreshold(): ?float
     {
-        return $this->getConfigSlowSqlQueryExplainThreshold();
+        $temporaryThreshold = self::getTemporaryThreshold($this->temporarySqlQueryDebugThreshold);
+        if ($temporaryThreshold !== null) {
+            return $temporaryThreshold->value();
+        }
+
+        return $this->getConfigSlowSqlQueryDebugThreshold();
+    }
+
+    /**
+     * @param float|null $threshold threshold value in milliseconds
+     */
+    final public function setSlowSqlQueryDebugThreshold(?float $threshold): TemporaryThreshold
+    {
+        $temporaryThreshold = self::getTemporaryThreshold($this->temporarySqlQueryDebugThreshold);
+        if ($temporaryThreshold !== null) {
+            return new TemporaryThreshold($threshold, $temporaryThreshold->value());
+        }
+
+        $temporaryThreshold = new TemporaryThreshold($threshold, $this->getSlowSqlQueryDebugThreshold());
+        $this->temporarySqlQueryDebugThreshold = \WeakReference::create($temporaryThreshold);
+
+        return $temporaryThreshold;
     }
 
     /**
@@ -199,7 +222,7 @@ abstract class PerformanceLogConfig
     /**
      * @return float|null threshold value in milliseconds
      */
-    protected function getConfigSlowSqlQueryExplainThreshold(): ?float
+    protected function getConfigSlowSqlQueryDebugThreshold(): ?float
     {
         return null;
     }

@@ -48,7 +48,7 @@ class DatabaseListener
      */
     private function explainSqlQuery(string $sql, float $time, \PDO $pdo, array $bindings): array
     {
-        $threshold = $this->performanceLogConfig->getSlowSqlQueryExplainThreshold();
+        $threshold = $this->performanceLogConfig->getSlowSqlQueryDebugThreshold();
         if ($this->explaining || $threshold === null || $time < $threshold) {
             return [];
         }

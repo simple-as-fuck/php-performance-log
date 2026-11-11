@@ -14,8 +14,9 @@ return [
         // define threshold for single database query
         'slow_query_threshold' => 50,
 
-        // define threshold for logging EXPLAIN of a slow select query, with the query log or as debug (MySQL and MariaDB only)
-        'slow_query_explain_threshold' => null,
+        // define threshold for single database query logged as debug
+        // threshold zero value not have here special meaning
+        'slow_query_debug_threshold' => null,
 
         // define threshold for one database transaction
         'slow_transaction_threshold' => 300,

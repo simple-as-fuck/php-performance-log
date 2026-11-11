@@ -77,11 +77,13 @@ by setting a temporary threshold in [PerformanceLogConfig](../src/Service/Perfor
 /** @var \SimpleAsFuck\PerformanceLog\Service\PerformanceLogConfig $performanceLogConfig */
 
 $sqlThreshold = $performanceLogConfig->setSlowSqlQueryThreshold(null);
+$sqlDebugThreshold = $performanceLogConfig->setSlowSqlQueryDebugThreshold(null);
 $transactionThreshold = $performanceLogConfig->setSlowDbTransactionThreshold(null);
 
 // run some slow queries without annoying performance log
 
 $sqlThreshold->restore();
+$sqlDebugThreshold->restore();
 $transactionThreshold->restore();
 ```
 

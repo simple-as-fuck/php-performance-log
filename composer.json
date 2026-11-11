@@ -4,6 +4,7 @@
     "license": "Unlicense",
     "require": {
         "php": "^8.3",
+        "ext-pdo": "*",
         "illuminate/support": "^10.49|^11.0|^12.0|^13.0",
         "illuminate/console": "^10.49|^11.0|^12.0|^13.0",
         "illuminate/database": "^10.49|^11.0|^12.0|^13.0",
