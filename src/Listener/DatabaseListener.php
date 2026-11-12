@@ -27,10 +27,10 @@ class DatabaseListener
      * @param float $time in milliseconds
      * @param array<mixed> $bindings
      */
-    public function onSqlQuery(string $sql, float $time, ?string $connectionName, ?\PDO $pdo = null, array $bindings = []): void
+    public function onSqlQuery(string $sql, #[\SensitiveParameter] array $bindings, float $time, ?string $connectionName, \PDO $pdo): void
     {
         $queryThreshold = $this->performanceLogConfig->getSlowSqlQueryThreshold();
-        $explain = $pdo === null ? [] : $this->explainSqlQuery($sql, $time, $pdo, $bindings);
+        $explain = $this->explainSqlQuery($sql, $time, $pdo, $bindings);
 
         if ($queryThreshold === 0.0) {
             $this->logger->debug('Database query time: '.$time.'ms sql: "'.$sql.'" connection: "'.$connectionName.'" pid: '.\getmypid(), $explain);
