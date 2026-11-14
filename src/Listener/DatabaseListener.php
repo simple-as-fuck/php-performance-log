@@ -90,6 +90,7 @@ class DatabaseListener
 
     /**
      * @param array<mixed> $bindings
+     * @return string|array<mixed>
      */
     private function explainSqlQuery(string $sql, #[\SensitiveParameter] array $bindings, \PDO $pdo): string|array
     {
@@ -125,7 +126,7 @@ class DatabaseListener
 
             $bindingPosition = 1;
             foreach ($bindings as $key => $binding) {
-                if ($driverName == 'pgsql') {
+                if ($driverName === 'pgsql') {
                     $binding = '$' . $bindingPosition;
                 }
 

@@ -20,6 +20,27 @@ final class DatabaseListenerTest extends TestCase
         ['id' => 1, 'select_type' => 'SIMPLE', 'table' => 'users', 'type' => 'ALL', 'rows' => 1000],
     ];
 
+    /** @var array<\PDO> */
+    private array $databases;
+
+    public function setUp(): void
+    {
+        $this->databases = [
+            new \PDO('sqlite::memory:'),
+            new \PDO('mysql:host=mysql;dbname=database', 'root', 'password'),
+            new \PDO('mysql:host=mariadb;dbname=database', 'root', 'password'),
+            new \PDO('pgsql:host=postgres;dbname=database', 'postgres', 'password'),
+        ];
+
+        foreach ($this->databases as $database) {
+            $database->exec('
+                create table users (
+                    email varchar(255) not null
+                )
+            ');
+        }
+    }
+
     public function testSlowSelectExplainIsLogged(): void
     {
         $statement = $this->createMock(\PDOStatement::class);
@@ -36,7 +57,7 @@ final class DatabaseListenerTest extends TestCase
         );
 
         $listener = $this->makeListener($logger, null, 2000);
-        $listener->onSqlQuery(self::SELECT, 2500, 'mysql', $pdo, [self::SECRET]);
+        $listener->onSqlQuery(self::SELECT, [self::SECRET], 2500, 'mysql', $pdo);
     }
 
     public function testSlowSelectExplainIsLoggedWithSlowQueryWarning(): void
@@ -46,7 +67,7 @@ final class DatabaseListenerTest extends TestCase
         $logger->expects(self::never())->method('debug');
 
         $listener = $this->makeListener($logger, 50, 2000);
-        $listener->onSqlQuery(self::SELECT, 2500, 'mysql', $this->makeExplainingPdo(), [self::SECRET]);
+        $listener->onSqlQuery(self::SELECT, [self::SECRET], 2500, 'mysql', $this->makeExplainingPdo());
     }
 
     public function testSlowSelectExplainIsLoggedWithQueryTime(): void
@@ -55,11 +76,11 @@ final class DatabaseListenerTest extends TestCase
         $logger->expects(self::once())->method('debug')->with(self::stringStartsWith('Database query time: 2500ms'), ['explain' => self::EXPLAIN]);
 
         $listener = $this->makeListener($logger, 0, 2000);
-        $listener->onSqlQuery(self::SELECT, 2500, 'mysql', $this->makeExplainingPdo(), [self::SECRET]);
+        $listener->onSqlQuery(self::SELECT, [self::SECRET], 2500, 'mysql', $this->makeExplainingPdo());
     }
 
     #[DataProvider('dataQueryIsNotExplained')]
-    public function testQueryIsNotExplained(string $sql, float $time, ?float $explainThreshold, bool $withPdo, string $driver): void
+    public function testQueryIsNotExplained(string $sql, float $time, ?float $explainThreshold, string $driver): void
     {
         $pdo = $this->makePdo($driver);
         $pdo->expects(self::never())->method('prepare');
@@ -68,21 +89,20 @@ final class DatabaseListenerTest extends TestCase
         $logger->expects(self::never())->method(self::anything());
 
         $listener = $this->makeListener($logger, null, $explainThreshold);
-        $listener->onSqlQuery($sql, $time, 'mysql', $withPdo ? $pdo : null, [self::SECRET]);
+        $listener->onSqlQuery($sql, [self::SECRET], $time, 'mysql', $pdo);
     }
 
     /**
-     * @return non-empty-array<string, array{string, float, float|null, bool, string}>
+     * @return non-empty-array<string, array{string, float, float|null, string}>
      */
     public static function dataQueryIsNotExplained(): array
     {
         return [
-            'fast select' => [self::SELECT, 1999, 2000, true, 'mysql'],
-            'slow update' => ['update `users` set `name` = null where `email` = ?', 2500, 2000, true, 'mysql'],
-            'slow insert with select' => ['insert into `users_copy` select * from `users` where `email` = ?', 2500, 2000, true, 'mysql'],
-            'explain turned off' => [self::SELECT, 60000, null, true, 'mysql'],
-            'without pdo' => [self::SELECT, 2500, 2000, false, 'mysql'],
-            'not mysql database' => [self::SELECT, 2500, 2000, true, 'pgsql'],
+            'fast select' => [self::SELECT, 1999, 2000, 'mysql'],
+            'slow update' => ['update `users` set `name` = null where `email` = ?', 2500, 2000, 'mysql'],
+            'slow insert with select' => ['insert into `users_copy` select * from `users` where `email` = ?', 2500, 2000, 'mysql'],
+            'explain turned off' => [self::SELECT, 60000, null, 'mysql'],
+            'not mysql database' => [self::SELECT, 2500, 2000, 'pgsql'],
         ];
     }
 
@@ -98,7 +118,7 @@ final class DatabaseListenerTest extends TestCase
         );
 
         $listener = $this->makeListener($logger, null, 2000);
-        $listener->onSqlQuery(self::SELECT, 2500, 'mysql', $pdo, [self::SECRET]);
+        $listener->onSqlQuery(self::SELECT, [self::SECRET], 2500, 'mysql', $pdo);
     }
 
     public function testQueryExecutedByExplainIsNotExplained(): void
@@ -114,13 +134,13 @@ final class DatabaseListenerTest extends TestCase
         // a query executed by the explain is reported back to the listener, the limit stops a broken protection
         $pdo->expects(self::once())->method('prepare')->willReturnCallback(static function () use ($listener, $pdo, $statement, &$calls): \PDOStatement {
             if (++$calls <= 3) {
-                $listener->onSqlQuery(self::SELECT, 2500, 'mysql', $pdo, [self::SECRET]);
+                $listener->onSqlQuery(self::SELECT, [self::SECRET], 2500, 'mysql', $pdo);
             }
 
             return $statement;
         });
 
-        $listener->onSqlQuery(self::SELECT, 2500, 'mysql', $pdo, [self::SECRET]);
+        $listener->onSqlQuery(self::SELECT, [self::SECRET], 2500, 'mysql', $pdo);
     }
 
     public function testQueryIsExplainedAfterFailedExplain(): void
@@ -134,8 +154,8 @@ final class DatabaseListenerTest extends TestCase
         $logger->expects(self::exactly(2))->method('debug');
 
         $listener = $this->makeListener($logger, null, 2000);
-        $listener->onSqlQuery(self::SELECT, 2500, 'mysql', $pdo, [self::SECRET]);
-        $listener->onSqlQuery(self::SELECT, 2500, 'mysql', $pdo, [self::SECRET]);
+        $listener->onSqlQuery(self::SELECT, [self::SECRET], 2500, 'mysql', $pdo);
+        $listener->onSqlQuery(self::SELECT, [self::SECRET], 2500, 'mysql', $pdo);
     }
 
     private function makeListener(LoggerInterface $logger, ?float $queryThreshold, ?float $explainThreshold): DatabaseListener
