@@ -12,8 +12,7 @@ use SimpleAsFuck\PerformanceLog\Service\Stopwatch;
 class DatabaseListener
 {
     private readonly Measurement $transactionMeasurement;
-    // queries executed by the explain are never explained again, if some PDO wrapper reports them to the listener
-    private bool $explaining = false;
+    private bool $explainingQuery = false;
 
     public function __construct(
         private readonly LoggerInterface $logger,
@@ -24,63 +23,26 @@ class DatabaseListener
     }
 
     /**
-     * @param float $time in milliseconds
      * @param array<mixed> $bindings
+     * @param float $time in milliseconds
      */
     public function onSqlQuery(string $sql, #[\SensitiveParameter] array $bindings, float $time, ?string $connectionName, \PDO $pdo): void
     {
         $queryThreshold = $this->performanceLogConfig->getSlowSqlQueryThreshold();
-        $explain = $this->explainSqlQuery($sql, $time, $pdo, $bindings);
+        $queryDebugThreshold = $this->performanceLogConfig->getSlowSqlQueryDebugThreshold();
 
-        if ($queryThreshold === 0.0) {
-            $this->logger->debug('Database query time: '.$time.'ms sql: "'.$sql.'" connection: "'.$connectionName.'" pid: '.\getmypid(), $explain);
-        } elseif ($queryThreshold !== null && $time >= $queryThreshold) {
-            $this->logger->warning('Database query is too slow: '.$time.'ms sql: "'.$sql.'" threshold: '.$queryThreshold. 'ms connection: "'.$connectionName.'" pid: '.\getmypid(), $explain);
-        } elseif ($explain !== []) {
-            $this->logger->debug('Database query explain: '.$time.'ms sql: "'.$sql.'" connection: "'.$connectionName.'" pid: '.\getmypid(), $explain);
-        }
-    }
-
-    /**
-     * @param float $time in milliseconds
-     * @param array<mixed> $bindings
-     * @return array{explain?: list<array<mixed>>, explain_exception?: class-string<\Throwable>} log context
-     */
-    private function explainSqlQuery(string $sql, float $time, \PDO $pdo, array $bindings): array
-    {
-        $threshold = $this->performanceLogConfig->getSlowSqlQueryDebugThreshold();
-        if ($this->explaining || $threshold === null || $time < $threshold) {
-            return [];
-        }
-        if (\preg_match('/\A\s*select.*/i', $sql) !== 1) {
-            return [];
-        }
-        // only the tabular explain of mysql, explain of another database can contain values from the query
-        if ($pdo->getAttribute(\PDO::ATTR_DRIVER_NAME) !== 'mysql') {
-            return [];
+        if ($queryThreshold !== null && $time >= $queryThreshold && $queryThreshold !== 0.0) {
+            $this->logger->warning('Database query is too slow: '.$time.'ms sql: "'.$sql.'" threshold: '.$queryThreshold. 'ms connection: "'.$connectionName.'" pid: '.\getmypid(), [
+                'explain' => $this->explainSqlQuery($sql, $bindings, $pdo),
+            ]);
+            return;
         }
 
-        $this->explaining = true;
-        try {
-            $statement = $pdo->prepare('EXPLAIN '.$sql);
-            if ($statement === false) {
-                throw new \RuntimeException('Database query explain prepare failed');
-            }
-            // bindValue keeps the data types unlike execute parameters, but positional parameters are indexed from 1
-            foreach ($bindings as $key => $value) {
-                $statement->bindValue(\is_string($key) ? $key : $key + 1, $value, \is_int($value) ? \PDO::PARAM_INT : \PDO::PARAM_STR);
-            }
-            $statement->execute();
-            /** @var list<array<mixed>> $explain */
-            $explain = $statement->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $exception) {
-            // the exception message can contain values from the query, so only the exception type is logged
-            return ['explain_exception' => $exception::class];
-        } finally {
-            $this->explaining = false;
+        if (($queryDebugThreshold !== null && $time >= $queryDebugThreshold) || $queryThreshold === 0.0) {
+            $this->logger->debug('Database query time: '.$time.'ms sql: "'.$sql.'" connection: "'.$connectionName.'" pid: '.\getmypid(), [
+                'explain' => $this->explainSqlQuery($sql, $bindings, $pdo),
+            ]);
         }
-
-        return ['explain' => $explain];
     }
 
     public function onTransactionStart(int $transactionLevel, ?string $connectionName): void
@@ -123,6 +85,66 @@ class DatabaseListener
         }
         if ($time >= $threshold) {
             $this->logger->warning('Database transaction is too slow: '.$time.'ms threshold: '.$threshold. 'ms connection: "'.$connectionName.'" pid: '.\getmypid());
+        }
+    }
+
+    /**
+     * @param array<mixed> $bindings
+     */
+    private function explainSqlQuery(string $sql, #[\SensitiveParameter] array $bindings, \PDO $pdo): string|array
+    {
+        if ($this->explainingQuery) {
+            return 'Recursion protection';
+        }
+
+        $this->explainingQuery = true;
+        try {
+            $driverName = @$pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+            if ($driverName === null) {
+                return 'Detect drive failed';
+            }
+
+            $explainSqlPrefix = match ($driverName) {
+                // https://dev.mysql.com/doc/refman/8.4/en/explain.html
+                // https://mariadb.com/docs/server/reference/sql-statements/administrative-sql-statements/analyze-and-explain-statements/explain
+                'mysql' => 'explain ',
+                // https://sqlite.org/eqp.html
+                'sqlite' => 'explain query plan ',
+                // https://www.postgresql.org/docs/current/sql-explain.html
+                'pgsql' => 'explain (generic_plan) ',
+                default => null,
+            };
+            if ($explainSqlPrefix !== null) {
+                return 'Unsupported';
+            }
+
+            $statement = @$pdo->prepare($explainSqlPrefix . $sql);
+            if ($statement === false) {
+                return 'Prepare SQL failed';
+            }
+
+            $bindingPosition = 1;
+            foreach ($bindings as $key => $binding) {
+                if ($driverName == 'pgsql') {
+                    $binding = '$' . $bindingPosition;
+                }
+
+                if (! @$statement->bindValue(\is_string($key) ? $key : $key + 1, $binding, \is_string($binding) ? \PDO::PARAM_STR : \PDO::PARAM_INT)) {
+                    return 'Bind value failed';
+                }
+
+                $bindingPosition++;
+            }
+
+            if (! @$statement->execute()) {
+                return 'Execute SQL failed';
+            }
+
+            return @$statement->fetchAll(\PDO::FETCH_OBJ);
+        } catch (\Throwable $exception) {
+            return $exception::class;
+        } finally {
+            $this->explainingQuery = false;
         }
     }
 }
